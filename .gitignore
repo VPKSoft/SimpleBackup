@@ -331,3 +331,4 @@ ASALocalRun/
 /Installer/setup_simplebackup.exe
 /SimpleBackup/DBLocalization.exe
 /SimpleBackup/Installer/setup_simplebackup.exe
+*.exe
