@@ -1,9 +1,7 @@
 ﻿#region License
 /*
-An utility to zip a directory using DotNetZip Library 
-(http://dotnetzip.codeplex.com).
-
-Copyright (C) 2015  VPKSoft
+A simple backup software to backup directories with a schedule.
+Copyright (C) 2020 VPKSoft
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,12 +18,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #endregion
 
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 using Ionic.Zip;
 using VPKSoft.LangLib;
@@ -48,60 +43,47 @@ namespace SimpleBackup
 
         public class ZipReturn
         {
-            public int FileCount = 0;
-            public int FailedFileCount = 0;
-            public int DirCount = 0;
+            public int FileCount;
+            public int FailedFileCount;
+            public int DirCount;
             public Type ExceptionType = new object().GetType();
             public ZipReturnFlags Flags = ZipReturnFlags.Success;
-            public bool Success
-            {
-                get
-                {
-                    return  Flags == ZipReturnFlags.Success && 
-                                     ExceptionType == (new object()).GetType() &&
-                                     FailedFileCount == 0 &&
-                                     FileCount > 0;
-                }
-            }
 
             public string StatusString
             {
                 get
                 {
-                    string retval = string.Empty;
+                    string result = string.Empty;
                     
-                    retval += FailedFileCount > 0 ? DBLangEngine.GetStatMessage("msgFilesFailed", "Files failed: {0}{1}|How many files failed during backup operation", FailedFileCount, Environment.NewLine) : string.Empty;
-                    retval += (FailedFileCount + FileCount) > 0 ? DBLangEngine.GetStatMessage("msgFilesSucceeded", "Files succeeded: {0}{1}|How many files succeeded during backup operation", FileCount, Environment.NewLine) : string.Empty;
-                    retval += (FailedFileCount + DirCount) > 0 ? DBLangEngine.GetStatMessage("msgDirectoriesSucceeded", "Directories succeeded: {0}{1}|How many directories succeeded during backup operation", DirCount, Environment.NewLine) : string.Empty;
-                    retval += (FailedFileCount + FileCount) > 0 ? DBLangEngine.GetStatMessage("msgFileFailRatio", "File fail ratio: {0} %|How many files in percentage failed compared to the total file amount in a backup operation",
-                        (FileCount > 0 ? ((double)FailedFileCount / (double)FileCount * 100.0).ToString("F2") : (100.0).ToString("F2")) + 
+                    result += FailedFileCount > 0 ? DBLangEngine.GetStatMessage("msgFilesFailed", "Files failed: {0}{1}|How many files failed during backup operation", FailedFileCount, Environment.NewLine) : string.Empty;
+                    result += (FailedFileCount + FileCount) > 0 ? DBLangEngine.GetStatMessage("msgFilesSucceeded", "Files succeeded: {0}{1}|How many files succeeded during backup operation", FileCount, Environment.NewLine) : string.Empty;
+                    result += (FailedFileCount + DirCount) > 0 ? DBLangEngine.GetStatMessage("msgDirectoriesSucceeded", "Directories succeeded: {0}{1}|How many directories succeeded during backup operation", DirCount, Environment.NewLine) : string.Empty;
+                    result += (FailedFileCount + FileCount) > 0 ? DBLangEngine.GetStatMessage("msgFileFailRatio", "File fail ratio: {0} %|How many files in percentage failed compared to the total file amount in a backup operation",
+                        (FileCount > 0 ? (FailedFileCount / (double)FileCount * 100.0).ToString("F2") : (100.0).ToString("F2")) + 
                         Environment.NewLine) : string.Empty;
-                    retval += Flags.HasFlag(ZipReturnFlags.SameHash) ? DBLangEngine.GetStatMessage("msgDirNotChanged", "Backup directory hasn't changed.|As in the hash of the directory is the same.") : string.Empty;
+                    result += Flags.HasFlag(ZipReturnFlags.SameHash) ? DBLangEngine.GetStatMessage("msgDirNotChanged", "Backup directory hasn't changed.|As in the hash of the directory is the same.") : string.Empty;
 
-                    retval = retval == string.Empty ? "OK" : retval;
-                    return retval;
+                    result = result == string.Empty ? "OK" : result;
+                    return result;
                 }
             }
 
-            public bool Empty
-            {
-                get
-                {
-                    return FileCount == 0 &&
-                           FailedFileCount == 0 &&
-                           DirCount == 0 &&
-                           ExceptionType == new object().GetType() &&
-                           Flags == ZipReturnFlags.Success;
-                }
-            }
+            public bool Empty =>
+                FileCount == 0 &&
+                FailedFileCount == 0 &&
+                DirCount == 0 &&
+                ExceptionType == new object().GetType() &&
+                Flags == ZipReturnFlags.Success;
         }
 
         public static bool FileLockedRead(string fileName)
         {
             try
             {
-                using (FileStream fileStream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) { }
-//                using (File.OpenRead(fileName)) { } this will cause an exception..
+                using (new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+
+                }
                 return false;
             } 
             catch
@@ -110,18 +92,13 @@ namespace SimpleBackup
             }
         }
 
-        private static void DebugCall()
+        public static ZipReturn Compress(string dir, string file, bool allowFileLocks)
         {
-
-        }
-
-        public static ZipReturn Compress(string dir, string file)
-        {
-            ZipReturn retval = new ZipReturn();
+            ZipReturn result = new ZipReturn();
             if (!Utils.ValidFileName(Path.GetFileName(file)))
             {
-                retval.Flags = ZipReturnFlags.InvalidFileName;
-                return retval;
+                result.Flags = ZipReturnFlags.InvalidFileName;
+                return result;
             }
 
             string tmpFile = file;
@@ -129,8 +106,8 @@ namespace SimpleBackup
 
             if (!Utils.ValidFileName(Path.GetFileName(file)))
             {
-                retval.Flags = ZipReturnFlags.InvalidFileName;
-                return retval;
+                result.Flags = ZipReturnFlags.InvalidFileName;
+                return result;
             }
 
             try
@@ -142,8 +119,8 @@ namespace SimpleBackup
             }
             catch
             {
-                retval.Flags = ZipReturnFlags.PreviousFileCantBeDeleted;
-                return retval;
+                result.Flags = ZipReturnFlags.PreviousFileCantBeDeleted;
+                return result;
             }
 
             try
@@ -152,43 +129,42 @@ namespace SimpleBackup
                 List<string> dirs = new List<string>();
                 using (ZipFile zip = new ZipFile())
                 {
-                    string directory;
-                    foreach (string fname in files)
+                    foreach (string fileName in files)
                     {
-                        if (Directory.Exists(fname))
-                        {
-                            directory = fname.Replace(dir, string.Empty).TrimStart('\\');
-                        }
-                        else
-                        {
-                            directory = Path.GetDirectoryName(fname).Replace(dir, string.Empty).TrimStart('\\');
-                        }
+                        var directory = Directory.Exists(fileName)
+                            ? fileName.Replace(dir, string.Empty).TrimStart('\\')
+                            : Path.GetDirectoryName(fileName)?.Replace(dir, string.Empty).TrimStart('\\');
 
-                        if (Directory.Exists(fname) && directory != string.Empty)
+                        if (Directory.Exists(fileName) && directory != string.Empty)
                         {
                             zip.AddDirectoryByName(directory);
                             if (!dirs.Contains(directory))
                             {
                                 dirs.Add(directory);
-                                retval.DirCount++;
+                                result.DirCount++;
                             }
                         }
                         else
                         {
-                            if (FileLockedRead(fname))
+                            if (FileLockedRead(fileName))
                             {
-                                retval.Flags |= ZipReturnFlags.LockedFile;
-                                retval.FailedFileCount++;
+                                if (allowFileLocks)
+                                {
+                                    continue;
+                                }
+
+                                result.Flags |= ZipReturnFlags.LockedFile;
+                                result.FailedFileCount++;
                             }
                             else
                             {
                                 if (!dirs.Contains(directory))
                                 {
                                     dirs.Add(directory);
-                                    retval.DirCount++;
+                                    result.DirCount++;
                                 }
-                                zip.AddFile(fname, directory);
-                                retval.FileCount++;
+                                zip.AddFile(fileName, directory);
+                                result.FileCount++;
                             }
                         }
                     }
@@ -201,15 +177,15 @@ namespace SimpleBackup
                     }
                     */
                 }
-                retval.Flags |= ZipReturnFlags.Success;
+                result.Flags |= ZipReturnFlags.Success;
             }
             catch (Exception ex)
             {
-                retval.ExceptionType = ex.GetType();
-                retval.Flags |= ZipReturnFlags.UnknownException;
+                result.ExceptionType = ex.GetType();
+                result.Flags |= ZipReturnFlags.UnknownException;
             }
 
-            if (retval.Flags == ZipReturnFlags.Success)
+            if (result.Flags == ZipReturnFlags.Success)
             {
                 try
                 {
@@ -221,7 +197,7 @@ namespace SimpleBackup
                 }
                 catch
                 {
-                    retval.Flags |= ZipReturnFlags.PreviousFileCantBeDeleted;
+                    result.Flags |= ZipReturnFlags.PreviousFileCantBeDeleted;
                 }
             }
             else
@@ -235,11 +211,11 @@ namespace SimpleBackup
                 }
                 catch
                 {
-
+                    // ignored..
                 }
             }
 
-            return retval;
+            return result;
         }
     }
 }

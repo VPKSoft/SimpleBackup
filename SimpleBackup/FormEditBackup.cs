@@ -1,7 +1,7 @@
 ﻿#region License
 /*
 A simple backup software to backup directories with a schedule.
-Copyright (C) 2015  VPKSoft
+Copyright (C) 2020 VPKSoft
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,18 +20,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Globalization;
 using System.Data.SQLite;
 using System.IO;
-using FolderSelect;
 using VPKSoft.LangLib;
+using Ookii.Dialogs.WinForms;
 
 namespace SimpleBackup
 {
@@ -40,8 +36,7 @@ namespace SimpleBackup
 
         public static CronEntry ExecuteAdd(ref SQLiteConnection conn)
         {
-            FormEditBackup frm = new FormEditBackup();
-            frm.cbWeekDaysAll.Checked = true;
+            FormEditBackup frm = new FormEditBackup {cbWeekDaysAll = {Checked = true}};
             frm.SetChecked(false, frm.cbWeekDaysAll);
             frm.cbMonthsAll.Checked = true;
             frm.SetChecked(false, frm.cbMonthsAll);
@@ -71,9 +66,11 @@ namespace SimpleBackup
             frm.tbBackupDirFrom.Text = entry.DirFrom;
             frm.tbBackupDirTo.Text = entry.DirTo;
             frm.tbBackupFile.Text = entry.BackupFile;
-            frm.nudAmout.Value = entry.SaveBackupsNO;
+            frm.nudAmout.Value = entry.SaveBackupsNo;
             frm.tbProcess.Text = entry.ProcessFile;
             frm.nudProcessKill.Value = entry.KillProcessSeconds;
+            frm.cbAllowLockedFiles.Checked = entry.AllowLockedFiles;
+
             frm.cbKillProcess.Checked = entry.KillProcessWait;
             frm.nudRetryHours.Value = entry.RetryHours;
 
@@ -85,8 +82,7 @@ namespace SimpleBackup
             }
             else if (entry.WeekDays.Count > 0)
             {
-                if (DateTimeFormatInfo.CurrentInfo.FirstDayOfWeek == DayOfWeek.Monday)
-// DEBUG               if (DayOfWeek.Sunday == DayOfWeek.Monday)
+                if (DateTimeFormatInfo.CurrentInfo != null && DateTimeFormatInfo.CurrentInfo.FirstDayOfWeek == DayOfWeek.Monday)
                 {
                     for (int i = 0; i < entry.WeekDays.Count; i++)
                     {
@@ -172,16 +168,16 @@ namespace SimpleBackup
             }
         }
 
-        FolderSelectDialog fbBrowse = new FolderSelectDialog();
+        readonly VistaFolderBrowserDialog  folderBrowser = new VistaFolderBrowserDialog();
 
         public FormEditBackup()
         {
             InitializeComponent();
-            DBLangEngine.InitalizeLanguage("SimpleBackup.Messages");
+            DBLangEngine.InitializeLanguage("SimpleBackup.Messages");
 
             if (VPKSoft.LangLib.Utils.ShouldLocalize() != null)
             {
-                DBLangEngine.InitalizeLanguage("SimpleBackup.Messages", VPKSoft.LangLib.Utils.ShouldLocalize(), false);
+                DBLangEngine.InitializeLanguage("SimpleBackup.Messages", VPKSoft.LangLib.Utils.ShouldLocalize(), false);
                 return; // After localization don't do anything more.
             }
             MainInit();
@@ -190,8 +186,8 @@ namespace SimpleBackup
         void MainInit()
         {
             List<string> days = new List<string>();
-// DEBUG            if (DayOfWeek.Sunday == DayOfWeek.Monday)
-            if (DateTimeFormatInfo.CurrentInfo.FirstDayOfWeek == DayOfWeek.Monday)
+
+            if (DateTimeFormatInfo.CurrentInfo != null && DateTimeFormatInfo.CurrentInfo.FirstDayOfWeek == DayOfWeek.Monday)
             {
                 days.Add(DateTimeFormatInfo.CurrentInfo.DayNames[1]);
                 days.Add(DateTimeFormatInfo.CurrentInfo.DayNames[2]);
@@ -203,15 +199,23 @@ namespace SimpleBackup
             }
             else
             {
-                days.AddRange(DateTimeFormatInfo.CurrentInfo.DayNames.ToArray());
+                if (DateTimeFormatInfo.CurrentInfo != null)
+                {
+                    days.AddRange(DateTimeFormatInfo.CurrentInfo.DayNames.ToArray());
+                }
             }
 
             btOK.Enabled = false;
 
+            // ReSharper disable once CoVariantArrayConversion
             clbWeekDays.Items.AddRange(days.ToArray());
 
             List<string> months = new List<string>();
-            months.AddRange(DateTimeFormatInfo.CurrentInfo.MonthNames);
+            if (DateTimeFormatInfo.CurrentInfo != null)
+            {
+                months.AddRange(DateTimeFormatInfo.CurrentInfo.MonthNames);
+            }
+
             for (int i = 0; i < months.Count; i++)
             {
                 months[i] = (i + 1).ToString().PadLeft(2, '0') + " - " + months[i];
@@ -220,6 +224,7 @@ namespace SimpleBackup
             if (months.Count > 12)
                 months.RemoveAt(12);
 
+            // ReSharper disable once CoVariantArrayConversion
             clbMonths.Items.AddRange(months.ToArray());
 
             for (int i = 1; i <= 31; i++)
@@ -256,7 +261,7 @@ namespace SimpleBackup
                 {
                     if (clbWeekDays.GetItemChecked(i))
                     {
-                        if (DateTimeFormatInfo.CurrentInfo.FirstDayOfWeek == DayOfWeek.Monday)
+                        if (DateTimeFormatInfo.CurrentInfo != null && DateTimeFormatInfo.CurrentInfo.FirstDayOfWeek == DayOfWeek.Monday)
                         {
                             switch (i)
                             {
@@ -356,7 +361,7 @@ namespace SimpleBackup
             }
 
             entry.Name = tbBackupName.Text;
-            entry.SaveBackupsNO = Convert.ToInt32(nudAmout.Value);
+            entry.SaveBackupsNo = Convert.ToInt32(nudAmout.Value);
             entry.BackupFile = tbBackupFile.Text;
             entry.DirTo = tbBackupDirTo.Text;
             entry.DirFrom = tbBackupDirFrom.Text;
@@ -371,6 +376,9 @@ namespace SimpleBackup
             {
                 entry.KillProcessWait = false;
             }
+
+            entry.AllowLockedFiles = cbAllowLockedFiles.Checked;
+
             entry.ProcessFile = tbProcess.Text;
         }
 
@@ -398,11 +406,11 @@ namespace SimpleBackup
                 List<DateTime> dates;
                 if (cbUseCronEntry.Checked)
                 {
-                    dates = TimeCalcs.ConstructDate(20, tbCronEntry.Text);
+                    dates = TimeCalculations.ConstructDate(20, tbCronEntry.Text);
                 }
                 else
                 {
-                     dates = TimeCalcs.ConstructDate(20, entry.WeekDays, entry.Months, entry.Days, entry.Hours, entry.Minutes);
+                     dates = TimeCalculations.ConstructDate(20, entry.WeekDays, entry.Months, entry.Days, entry.Hours, entry.Minutes);
                 }
 
                 for (int i = 0; i < dates.Count - 1; i++)
@@ -425,15 +433,20 @@ namespace SimpleBackup
                     ListViewItem lvi = new ListViewItem(dt.ToString("dddd"));
                     lvi.SubItems.Add(dt.ToString("yyyy"));
                     lvi.SubItems.Add(Convert.ToInt32(dt.ToString("MM")).ToString().TrimStart('0'));
-                    lvi.SubItems.Add(dfi.MonthNames[Convert.ToInt32(dt.ToString("MM")) - 1]);
-                    lvi.SubItems.Add(dfi.Calendar.GetWeekOfYear(dt, dfi.CalendarWeekRule, dfi.FirstDayOfWeek).ToString());
+                    if (dfi != null)
+                    {
+                        lvi.SubItems.Add(dfi.MonthNames[Convert.ToInt32(dt.ToString("MM")) - 1]);
+                        lvi.SubItems.Add(dfi.Calendar.GetWeekOfYear(dt, dfi.CalendarWeekRule, dfi.FirstDayOfWeek)
+                            .ToString());
+                    }
+
                     lvi.SubItems.Add(dt.ToString("dd").TrimStart('0'));
                     lvi.SubItems.Add(dt.ToString("HH:mm"));
                     lvi.SubItems.Add(dt.ToLongDateString() + " " + dt.ToLongTimeString());
                     lvDates.Items.Add(lvi);
                     btOK.Enabled = true;
                 }
-                SetOKEnable();
+                SetOkEnable();
             } 
             catch
             {
@@ -442,12 +455,12 @@ namespace SimpleBackup
                 ttTimeWarning.SetToolTip(pbTimeWarning, DBLangEngine.GetMessage("msgInvalidDatetime", "INVALID DATE/TIME|As it is"));
                 occurenceError = DBLangEngine.GetMessage("msgInvalidDatetime", "INVALID DATE/TIME|As it is");
                 btOK.Enabled = false;
-                SetOKEnable();
+                SetOkEnable();
                 lvDates.Items.Add(lvi);
             }
         }
 
-        private void SetOKEnable()
+        private void SetOkEnable()
         {
             string infoText = string.Empty;
             pbTimeWarning.Image = Bitmap.FromHicon(SystemIcons.Information.Handle);
@@ -459,12 +472,12 @@ namespace SimpleBackup
             if (tsMin.TotalMinutes < 5)
             {
 
-                infoText += DBLangEngine.GetMessage("msgOccurencesSmall", "Some time occurences would be larger than a year.|Some time occurences in generated time values are too large") + Environment.NewLine;
+                infoText += DBLangEngine.GetMessage("msgOccurencesSmall", "Some time occurrences would be larger than a year.|Some time occurrences in generated time values are too large") + Environment.NewLine;
                 pbTimeWarning.Image = Bitmap.FromHicon(SystemIcons.Exclamation.Handle);
             }
             if (tsMax.TotalDays > 366)
             {
-                infoText += DBLangEngine.GetMessage("msgOccurencesLarge", "Some time occurences would be larger than a year.|Some time occurences in generated time values are too large") + Environment.NewLine;
+                infoText += DBLangEngine.GetMessage("msgOccurencesLarge", "Some time occurrences would be larger than a year.|Some time occurrences in generated time values are too large") + Environment.NewLine;
                 pbTimeWarning.Image = Bitmap.FromHicon(SystemIcons.Exclamation.Handle);
             }
 
@@ -501,16 +514,13 @@ namespace SimpleBackup
                            Utils.ValidFileName(CronEntry.FormatBackupFilename(tbBackupFile.Text));
         }
 
-        private void btNextTime_Click(object sender, EventArgs e)
-        {
-            this.GetNextOccurenceList();
-        }
-
+        // ReSharper disable once InconsistentNaming
         private void clbClick(object sender, EventArgs e)
         {
             SetChecked(true, sender);
         }
 
+        // ReSharper disable once InconsistentNaming
         private void cbClick(object sender, EventArgs e)
         {
             if (sender is CheckBox)
@@ -538,24 +548,24 @@ namespace SimpleBackup
             }
             else
             {
-                if (sender is CheckBox)
+                if (sender is CheckBox checkBox)
                 {
-                    if ((sender as CheckBox) == cbWeekDaysAll)
+                    if (checkBox == cbWeekDaysAll)
                         ToggleCheckLcb(clbWeekDays, cbWeekDaysAll.Checked);
 
-                    if ((sender as CheckBox) == cbDaysAll)
+                    if (checkBox == cbDaysAll)
                         ToggleCheckLcb(clbDays, cbDaysAll.Checked);
 
-                    if ((sender as CheckBox) == cbHoursAll)
+                    if (checkBox == cbHoursAll)
                         ToggleCheckLcb(clbHours, cbHoursAll.Checked);
 
-                    if ((sender as CheckBox) == cbMonthsAll)
+                    if (checkBox == cbMonthsAll)
                         ToggleCheckLcb(clbMonths, cbMonthsAll.Checked);
 
-                    if ((sender as CheckBox) == cbMinutesAll)
+                    if (checkBox == cbMinutesAll)
                         ToggleCheckLcb(clbMinutes, cbMinutesAll.Checked);
 
-                    if ((sender as CheckBox) == cbUseCronEntry)
+                    if (checkBox == cbUseCronEntry)
                     {
                         ToggleCheckLcb(clbMinutes, cbUseCronEntry.Checked);
                         lbCronHelp.Visible = cbUseCronEntry.Checked;
@@ -573,9 +583,9 @@ namespace SimpleBackup
 
         private void btSelectBackupFrom_Click(object sender, EventArgs e)
         {
-            if (fbBrowse.ShowDialog(this.Handle))
+            if (folderBrowser.ShowDialog(this) == DialogResult.OK)
             {
-                tbBackupDirFrom.Text = fbBrowse.FileName;
+                tbBackupDirFrom.Text = folderBrowser.SelectedPath;
                 if (tbBackupName.Text == string.Empty)
                 {
                     tbBackupName.Text = tbBackupDirFrom.Text.Split(Path.DirectorySeparatorChar).Last();
@@ -585,9 +595,9 @@ namespace SimpleBackup
 
         private void btSelectBackupTo_Click(object sender, EventArgs e)
         {
-            if (fbBrowse.ShowDialog(this.Handle))
+            if (folderBrowser.ShowDialog(this) == DialogResult.OK)
             {
-                tbBackupDirTo.Text = fbBrowse.FileName;
+                tbBackupDirTo.Text = folderBrowser.SelectedPath;
             }
         }
 
@@ -601,19 +611,15 @@ namespace SimpleBackup
             GetNextOccurenceList();
         }
 
+        // ReSharper disable once InconsistentNaming
         private void tbTextChange(object sender, EventArgs e)
         {
-            SetOKEnable();
+            SetOkEnable();
         }
 
         private void btSelectProcess_Click(object sender, EventArgs e)
         {
             tbProcess.Text = FormSelectProcess.Execute();
-        }
-
-        private void btOK_Click(object sender, EventArgs e)
-        {
-
         }
     }
 }

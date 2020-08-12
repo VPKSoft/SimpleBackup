@@ -1,9 +1,7 @@
 ﻿#region License
 /*
-An utility for MD5 hashes.
-(http://dotnetzip.codeplex.com).
-
-Copyright (C) 2015  VPKSoft
+A simple backup software to backup directories with a schedule.
+Copyright (C) 2020 VPKSoft
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -22,25 +20,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 
-namespace VPKSoft.Hashes
+namespace SimpleBackup
 {
     /// <summary>
     /// Utilities for MD5 hash calculations.
     /// </summary>
-    public class IOHash
+    public class IoHash
     {
         /// <summary>
         /// Appends (TransformBlock) a stream to a MD5 instance.
         /// </summary>
         /// <param name="s">The stream to append.</param>
         /// <param name="md5">A reference to a MD5 instance to append to.</param>
-        public static void MD5AppenStream(Stream s, ref MD5 md5)
+        public static void Md5AppendStream(Stream s, ref MD5 md5)
         {
             byte [] buffer = new byte[1000000]; // go with 1 MB
             s.Position = 0;
@@ -57,7 +54,7 @@ namespace VPKSoft.Hashes
         /// </summary>
         /// <param name="bytes">A variable array of bytes to append.</param>
         /// <param name="md5">A reference to a MD5 instance to append to.</param>
-        public static void MD5AppendBytes(byte [] bytes, ref MD5 md5)
+        public static void Md5AppendBytes(byte [] bytes, ref MD5 md5)
         {
             md5.TransformBlock(bytes, 0, bytes.Length, bytes, 0);
         }
@@ -67,11 +64,11 @@ namespace VPKSoft.Hashes
         /// </summary>
         /// <param name="fileName">The name of the file to append.</param>
         /// <param name="md5">A reference to a MD5 instance to append to.</param>
-        public static void MD5AppendFile(string fileName, ref MD5 md5)
+        public static void Md5AppendFile(string fileName, ref MD5 md5)
         {
             using (FileStream fs = new FileStream(fileName, FileMode.Open, FileAccess.Read))
             {
-                MD5AppenStream(fs, ref md5);
+                Md5AppendStream(fs, ref md5);
             }
         }
 
@@ -80,9 +77,9 @@ namespace VPKSoft.Hashes
         /// </summary>
         /// <param name="s">String to append.</param>
         /// <param name="md5">A reference to a MD5 instance to append to.</param>
-        public static void MD5AppendString(string s, ref MD5 md5)
+        public static void Md5AppendString(string s, ref MD5 md5)
         {
-            byte[] buffer = System.Text.Encoding.Unicode.GetBytes(s.ToCharArray());
+            byte[] buffer = Encoding.Unicode.GetBytes(s.ToCharArray());
             md5.TransformBlock(buffer, 0, buffer.Length, buffer, 0);
         }
 
@@ -90,7 +87,7 @@ namespace VPKSoft.Hashes
         /// Finalizes (TransformFinalBlock) a MD5 instance with a zero-sized buffer.
         /// </summary>
         /// <param name="md5">A reference to a MD5 instance to finalize.</param>
-        public static void MD5FinalizeBlock(ref MD5 md5)
+        public static void Md5FinalizeBlock(ref MD5 md5)
         {
             md5.TransformFinalBlock(new byte[0], 0, 0);
         }
@@ -101,9 +98,9 @@ namespace VPKSoft.Hashes
         /// </summary>
         /// <param name="md5">A reference to a MD5 instance to finalize.</param>
         /// <returns>A hexadecimal string representation of the MD5 hash.</returns>
-        public static string MD5GetHashString(ref MD5 md5)
+        public static string Md5GetHashString(ref MD5 md5)
         {
-            MD5FinalizeBlock(ref md5);
+            Md5FinalizeBlock(ref md5);
             return "0x" + BitConverter.ToString(md5.Hash, 0).Replace("-", "");
         }
 
@@ -117,7 +114,7 @@ namespace VPKSoft.Hashes
         /// A hexadecimal string representation of the MD5 hash
         /// or an empty string if the operation failed.
         /// </returns>
-        public static string MD5HashDirSimple(string dir, bool ignoreUnreadableFiles = false)
+        public static string Md5HashDirSimple(string dir, bool ignoreUnreadableFiles = false)
         {
             try
             {
@@ -127,23 +124,17 @@ namespace VPKSoft.Hashes
                 files.AddRange(fileArray);
                 files.Sort();
                 List<string> dirs = new List<string>();
-                string directory;
-                foreach (string fname in files)
+                foreach (string fileName in files)
                 {
-                    if (Directory.Exists(fname))
-                    {
-                        directory = fname.Replace(dir, string.Empty).TrimStart('\\');
-                    }
-                    else
-                    {
-                        directory = Path.GetDirectoryName(fname).Replace(dir, string.Empty).TrimStart('\\');
-                    }
+                    var directory = Directory.Exists(fileName)
+                        ? fileName.Replace(dir, string.Empty).TrimStart('\\')
+                        : Path.GetDirectoryName(fileName)?.Replace(dir, string.Empty).TrimStart('\\');
 
-                    if (Directory.Exists(fname) && directory != string.Empty)
+                    if (Directory.Exists(fileName) && directory != string.Empty)
                     {
                         if (!dirs.Contains(directory))
                         {
-                            MD5AppendString(directory, ref md5);
+                            Md5AppendString(directory, ref md5);
                             dirs.Add(directory);
                         }
                     }
@@ -151,28 +142,28 @@ namespace VPKSoft.Hashes
                     {
                         if (!dirs.Contains(directory))
                         {
-                            MD5AppendString(directory, ref md5);
+                            Md5AppendString(directory, ref md5);
                             dirs.Add(directory);
                         }
-                        MD5AppendString(fname, ref md5);
+                        Md5AppendString(fileName, ref md5);
                         if (ignoreUnreadableFiles)
                         {
                             try
                             {
-                                MD5AppendFile(fname, ref md5);
+                                Md5AppendFile(fileName, ref md5);
                             }
                             catch
                             {
-
+                                // ignored..
                             }
                         }
                         else
                         {
-                            MD5AppendFile(fname, ref md5);
+                            Md5AppendFile(fileName, ref md5);
                         }
                     }
                 }
-                return MD5GetHashString(ref md5);
+                return Md5GetHashString(ref md5);
             }
             catch
             {

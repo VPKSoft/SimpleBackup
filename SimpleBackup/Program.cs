@@ -1,7 +1,7 @@
 ﻿#region License
 /*
 A simple backup software to backup directories with a schedule.
-Copyright (C) 2015  VPKSoft
+Copyright (C) 2020 VPKSoft
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,9 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
 
@@ -33,13 +30,15 @@ namespace SimpleBackup
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main(string[] args)
+        static void Main()
         {
             try
             {
+                // ReSharper disable twice StringLiteralTypo
                 VPKSoft.LangLib.DBLangEngine.DBName = "simplebackup_lang.sqlite";
                 if (VPKSoft.LangLib.Utils.ShouldLocalize() != null)
                 {
+                    // ReSharper disable four times ObjectCreationAsStatement
                     new FormEditBackup();
                     new FormMain();
                     new FormSelectProcess();
@@ -55,7 +54,7 @@ namespace SimpleBackup
                     }
                     else
                     {
-                        MessageBox.Show("SimpleBackup is already running..");
+                        MessageBox.Show(@"SimpleBackup is already running..");
                     }
                 }
             } 
@@ -74,7 +73,7 @@ namespace SimpleBackup
             }
         }
 
-        static public string AppDataDir
+        public static string AppDataDir
         {
             get
             {
@@ -83,13 +82,6 @@ namespace SimpleBackup
             }
         }
 
-        public static string AppInstallDir
-        {
-            get
-            {
-                return AppDomain.CurrentDomain.BaseDirectory;
-            }
-        }
-
+        public static string AppInstallDir => AppDomain.CurrentDomain.BaseDirectory;
     }
 }

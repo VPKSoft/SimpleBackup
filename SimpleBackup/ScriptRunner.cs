@@ -1,8 +1,25 @@
-﻿using System;
+﻿#region License
+/*
+A simple backup software to backup directories with a schedule.
+Copyright (C) 2020 VPKSoft
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+#endregion
+
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Data.SQLite;
 using System.IO;
 
@@ -10,47 +27,47 @@ namespace SimpleBackup
 {
     public class ScriptRunner
     {
-        private class DBScriptBlock
+        private class DbScriptBlock
         {
             public List<string> SQLBlock = new List<string>();
-            public int DBVer = 0;
+            public int DbVer;
         }
 
         public static bool RunScript(string sqliteDatasource)
         {
             try
             {
-                int dbVersion = 0;
-                List<DBScriptBlock> sqlBlocks = new List<DBScriptBlock>();
+                List<DbScriptBlock> sqlBlocks = new List<DbScriptBlock>();
                 using (SQLiteConnection conn = new SQLiteConnection("Data Source=" +sqliteDatasource + ";Pooling=true;FailIfMissing=false"))
                 {
                     conn.Open();
 
 
-                    int DBVer = 0;
+                    int dbVer = 0;
                     string line;
 
-                    using (SQLiteCommand command = new SQLiteCommand(conn))
+                    using (StreamReader sr = new StreamReader(Program.AppInstallDir + "script.sql_script"))
                     {
-                        using (StreamReader sr = new StreamReader(Program.AppInstallDir + "script.sql_script"))
+                        while (!sr.EndOfStream)
                         {
-                            while (!sr.EndOfStream)
+                            while (!(line = sr.ReadLine()).StartsWith("--VER " + dbVer))
                             {
-                                while (!(line = sr.ReadLine()).StartsWith("--VER " + DBVer)) { }
-
-                                DBScriptBlock scriptBlock = new DBScriptBlock();
-                                scriptBlock.DBVer = Convert.ToInt32(line.Split(' ')[1]);
-
-                                while (!(line = sr.ReadLine()).EndsWith("--ENDVER " + DBVer))
-                                {
-                                    scriptBlock.SQLBlock.Add(line);
-                                }
-                                DBVer++;
-                                sqlBlocks.Add(scriptBlock);
                             }
+
+                            DbScriptBlock scriptBlock = new DbScriptBlock();
+                            scriptBlock.DbVer = Convert.ToInt32(line.Split(' ')[1]);
+
+                            while (!(line = sr.ReadLine()).EndsWith("--ENDVER " + dbVer))
+                            {
+                                scriptBlock.SQLBlock.Add(line);
+                            }
+
+                            dbVer++;
+                            sqlBlocks.Add(scriptBlock);
                         }
                     }
 
+                    int dbVersion;
                     using (SQLiteCommand command = new SQLiteCommand(conn))
                     {
                         try 
@@ -88,14 +105,15 @@ namespace SimpleBackup
                                 command.CommandText = exec;
                                 command.ExecuteNonQuery();
                             }
-                        } 
+                        }
                         catch
                         {
-
+                            // ignored..
                         }
+
                         exec =  "INSERT INTO DBVERSION(DBVERSION) " + Environment.NewLine +
-                                "SELECT " + sqlBlocks[i].DBVer + " " + Environment.NewLine +
-                                "WHERE NOT EXISTS(SELECT 1 FROM DBVERSION WHERE DBVERSION = " + sqlBlocks[i].DBVer + "); " + Environment.NewLine;
+                                "SELECT " + sqlBlocks[i].DbVer + " " + Environment.NewLine +
+                                "WHERE NOT EXISTS(SELECT 1 FROM DBVERSION WHERE DBVERSION = " + sqlBlocks[i].DbVer + "); " + Environment.NewLine;
                         using (SQLiteCommand command = new SQLiteCommand(conn))
                         {
                             command.CommandText = exec;

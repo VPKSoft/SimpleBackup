@@ -1,7 +1,7 @@
 ﻿#region License
 /*
-Just utilities.
-Copyright (C) 2015  VPKSoft
+A simple backup software to backup directories with a schedule.
+Copyright (C) 2020 VPKSoft
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -18,12 +18,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #endregion
 
-
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 using System.Threading;
 
@@ -31,24 +27,19 @@ namespace SimpleBackup
 {
     public class Utils
     {
-        private static List<Mutex> mutexes = new List<Mutex>();
-        public static bool CheckIfRunning(string uniqueID)
+        // ReSharper disable once CollectionNeverQueried.Local
+        private static readonly List<Mutex> Mutexes = new List<Mutex>();
+        public static bool CheckIfRunning(string uniqueId)
         {
-            Mutex mutex;
-
             try
             {
-                mutex = Mutex.OpenExisting(uniqueID);
-                if (mutex != null)
-                {
-                    return true;
-                }
-                return false;
+                Mutex.OpenExisting(uniqueId);
+                return true;
             }
             catch
             {
-                mutex = new Mutex(true, uniqueID);
-                mutexes.Add(mutex);
+                var mutex = new Mutex(true, uniqueId);
+                Mutexes.Add(mutex);
                 return false;
             }
         }
@@ -57,6 +48,7 @@ namespace SimpleBackup
         {
             try 
             {
+                // ReSharper disable once ObjectCreationAsStatement
                 new FileInfo(fileName);
             }
             catch

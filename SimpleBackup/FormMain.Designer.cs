@@ -51,9 +51,15 @@
             this.mnuHelp = new System.Windows.Forms.ToolStripMenuItem();
             this.mnuAbout = new System.Windows.Forms.ToolStripMenuItem();
             this.pbProgress = new System.Windows.Forms.PictureBox();
+            this.tsMain = new System.Windows.Forms.ToolStrip();
+            this.tsbAddBackup = new System.Windows.Forms.ToolStripButton();
+            this.tsbEditBackup = new System.Windows.Forms.ToolStripButton();
+            this.tsbDeleteBackup = new System.Windows.Forms.ToolStripButton();
+            this.tsbAbout = new System.Windows.Forms.ToolStripButton();
             this.msTray.SuspendLayout();
             this.msMain.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbProgress)).BeginInit();
+            this.tsMain.SuspendLayout();
             this.SuspendLayout();
             // 
             // noIco
@@ -87,9 +93,9 @@
             this.btRunNow.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.btRunNow.Image = global::SimpleBackup.Properties.Resources.Application;
             this.btRunNow.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btRunNow.Location = new System.Drawing.Point(445, 234);
+            this.btRunNow.Location = new System.Drawing.Point(411, 257);
             this.btRunNow.Name = "btRunNow";
-            this.btRunNow.Size = new System.Drawing.Size(86, 26);
+            this.btRunNow.Size = new System.Drawing.Size(120, 26);
             this.btRunNow.TabIndex = 4;
             this.btRunNow.Text = "Run now";
             this.btRunNow.UseVisualStyleBackColor = true;
@@ -100,9 +106,9 @@
             this.btQuit.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.btQuit.Image = global::SimpleBackup.Properties.Resources.Exit;
             this.btQuit.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btQuit.Location = new System.Drawing.Point(12, 234);
+            this.btQuit.Location = new System.Drawing.Point(12, 257);
             this.btQuit.Name = "btQuit";
-            this.btQuit.Size = new System.Drawing.Size(86, 26);
+            this.btQuit.Size = new System.Drawing.Size(120, 26);
             this.btQuit.TabIndex = 5;
             this.btQuit.Text = "Quit";
             this.btQuit.UseVisualStyleBackColor = true;
@@ -121,14 +127,15 @@
             this.lvBackups.GridLines = true;
             this.lvBackups.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
             this.lvBackups.HideSelection = false;
-            this.lvBackups.Location = new System.Drawing.Point(12, 27);
+            this.lvBackups.Location = new System.Drawing.Point(12, 52);
             this.lvBackups.Name = "lvBackups";
             this.lvBackups.ShowItemToolTips = true;
-            this.lvBackups.Size = new System.Drawing.Size(519, 201);
+            this.lvBackups.Size = new System.Drawing.Size(519, 199);
             this.lvBackups.SmallImageList = this.imIcons;
             this.lvBackups.TabIndex = 18;
             this.lvBackups.UseCompatibleStateImageBehavior = false;
             this.lvBackups.View = System.Windows.Forms.View.Details;
+            this.lvBackups.SelectedIndexChanged += new System.EventHandler(this.lvBackups_SelectedIndexChanged);
             // 
             // colBackupName
             // 
@@ -184,7 +191,7 @@
             // 
             this.mnuAddBackup.Image = global::SimpleBackup.Properties.Resources.New_document;
             this.mnuAddBackup.Name = "mnuAddBackup";
-            this.mnuAddBackup.Size = new System.Drawing.Size(149, 22);
+            this.mnuAddBackup.Size = new System.Drawing.Size(180, 22);
             this.mnuAddBackup.Text = "Add backup";
             this.mnuAddBackup.Click += new System.EventHandler(this.mnuAddBackup_Click);
             // 
@@ -192,7 +199,7 @@
             // 
             this.mnuEditBackup.Image = global::SimpleBackup.Properties.Resources.Modify;
             this.mnuEditBackup.Name = "mnuEditBackup";
-            this.mnuEditBackup.Size = new System.Drawing.Size(149, 22);
+            this.mnuEditBackup.Size = new System.Drawing.Size(180, 22);
             this.mnuEditBackup.Text = "Edit backup";
             this.mnuEditBackup.Click += new System.EventHandler(this.mnuEditBackup_Click);
             // 
@@ -200,7 +207,7 @@
             // 
             this.mnuRunNow.Image = global::SimpleBackup.Properties.Resources.Application;
             this.mnuRunNow.Name = "mnuRunNow";
-            this.mnuRunNow.Size = new System.Drawing.Size(149, 22);
+            this.mnuRunNow.Size = new System.Drawing.Size(180, 22);
             this.mnuRunNow.Text = "Run now";
             this.mnuRunNow.Click += new System.EventHandler(this.btRunNow_Click);
             // 
@@ -208,20 +215,20 @@
             // 
             this.mnuDeleteBackup.Image = global::SimpleBackup.Properties.Resources.Delete;
             this.mnuDeleteBackup.Name = "mnuDeleteBackup";
-            this.mnuDeleteBackup.Size = new System.Drawing.Size(149, 22);
+            this.mnuDeleteBackup.Size = new System.Drawing.Size(180, 22);
             this.mnuDeleteBackup.Text = "Delete backup";
             this.mnuDeleteBackup.Click += new System.EventHandler(this.mnuDeleteBackup_Click);
             // 
             // toolStripMenuItem1
             // 
             this.toolStripMenuItem1.Name = "toolStripMenuItem1";
-            this.toolStripMenuItem1.Size = new System.Drawing.Size(146, 6);
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(177, 6);
             // 
             // mnuQuit
             // 
             this.mnuQuit.Image = global::SimpleBackup.Properties.Resources.Exit;
             this.mnuQuit.Name = "mnuQuit";
-            this.mnuQuit.Size = new System.Drawing.Size(149, 22);
+            this.mnuQuit.Size = new System.Drawing.Size(180, 22);
             this.mnuQuit.Text = "Quit";
             this.mnuQuit.Click += new System.EventHandler(this.mnuExit_Click);
             // 
@@ -237,7 +244,7 @@
             // 
             this.mnuAbout.Image = global::SimpleBackup.Properties.Resources.About;
             this.mnuAbout.Name = "mnuAbout";
-            this.mnuAbout.Size = new System.Drawing.Size(107, 22);
+            this.mnuAbout.Size = new System.Drawing.Size(180, 22);
             this.mnuAbout.Text = "About";
             this.mnuAbout.Click += new System.EventHandler(this.mnuAbout_Click);
             // 
@@ -251,10 +258,64 @@
             this.pbProgress.TabIndex = 22;
             this.pbProgress.TabStop = false;
             // 
+            // tsMain
+            // 
+            this.tsMain.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.tsbAddBackup,
+            this.tsbEditBackup,
+            this.tsbDeleteBackup,
+            this.tsbAbout});
+            this.tsMain.Location = new System.Drawing.Point(0, 24);
+            this.tsMain.Name = "tsMain";
+            this.tsMain.Size = new System.Drawing.Size(543, 25);
+            this.tsMain.TabIndex = 23;
+            this.tsMain.Text = "toolStrip1";
+            // 
+            // tsbAddBackup
+            // 
+            this.tsbAddBackup.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tsbAddBackup.Image = global::SimpleBackup.Properties.Resources.New_document;
+            this.tsbAddBackup.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tsbAddBackup.Name = "tsbAddBackup";
+            this.tsbAddBackup.Size = new System.Drawing.Size(23, 22);
+            this.tsbAddBackup.Text = "toolStripButton1";
+            this.tsbAddBackup.Click += new System.EventHandler(this.mnuAddBackup_Click);
+            // 
+            // tsbEditBackup
+            // 
+            this.tsbEditBackup.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tsbEditBackup.Image = global::SimpleBackup.Properties.Resources.Modify;
+            this.tsbEditBackup.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tsbEditBackup.Name = "tsbEditBackup";
+            this.tsbEditBackup.Size = new System.Drawing.Size(23, 22);
+            this.tsbEditBackup.Text = "toolStripButton1";
+            this.tsbEditBackup.Click += new System.EventHandler(this.mnuEditBackup_Click);
+            // 
+            // tsbDeleteBackup
+            // 
+            this.tsbDeleteBackup.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tsbDeleteBackup.Image = global::SimpleBackup.Properties.Resources.Delete;
+            this.tsbDeleteBackup.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tsbDeleteBackup.Name = "tsbDeleteBackup";
+            this.tsbDeleteBackup.Size = new System.Drawing.Size(23, 22);
+            this.tsbDeleteBackup.Text = "toolStripButton1";
+            this.tsbDeleteBackup.Click += new System.EventHandler(this.mnuDeleteBackup_Click);
+            // 
+            // tsbAbout
+            // 
+            this.tsbAbout.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.tsbAbout.Image = global::SimpleBackup.Properties.Resources.About;
+            this.tsbAbout.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.tsbAbout.Name = "tsbAbout";
+            this.tsbAbout.Size = new System.Drawing.Size(23, 22);
+            this.tsbAbout.Text = "toolStripButton1";
+            this.tsbAbout.Click += new System.EventHandler(this.mnuAbout_Click);
+            // 
             // FormMain
             // 
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.None;
-            this.ClientSize = new System.Drawing.Size(543, 272);
+            this.ClientSize = new System.Drawing.Size(543, 295);
+            this.Controls.Add(this.tsMain);
             this.Controls.Add(this.pbProgress);
             this.Controls.Add(this.msMain);
             this.Controls.Add(this.lvBackups);
@@ -267,10 +328,13 @@
             this.Text = "SimpleBackup";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
             this.Load += new System.EventHandler(this.FormMain_Load);
+            this.VisibleChanged += new System.EventHandler(this.FormMain_VisibleChanged);
             this.msTray.ResumeLayout(false);
             this.msMain.ResumeLayout(false);
             this.msMain.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbProgress)).EndInit();
+            this.tsMain.ResumeLayout(false);
+            this.tsMain.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -299,6 +363,11 @@
         private System.Windows.Forms.ToolStripMenuItem mnuDeleteBackup;
         private System.Windows.Forms.ToolStripMenuItem mnuHelp;
         private System.Windows.Forms.ToolStripMenuItem mnuAbout;
+        private System.Windows.Forms.ToolStrip tsMain;
+        private System.Windows.Forms.ToolStripButton tsbAddBackup;
+        private System.Windows.Forms.ToolStripButton tsbEditBackup;
+        private System.Windows.Forms.ToolStripButton tsbDeleteBackup;
+        private System.Windows.Forms.ToolStripButton tsbAbout;
     }
 }
 

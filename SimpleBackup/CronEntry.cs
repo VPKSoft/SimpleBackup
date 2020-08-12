@@ -1,7 +1,7 @@
 ﻿#region License
 /*
 A simple backup software to backup directories with a schedule.
-Copyright (C) 2015  VPKSoft
+Copyright (C) 2020 VPKSoft
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -21,18 +21,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Threading;
 using System.Data.SQLite;
 using System.Globalization;
 using System.ComponentModel;
 using System.IO;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 
 namespace SimpleBackup
 {
+    [SuppressMessage("ReSharper", "StringLiteralTypo")]
     public class CronEntry
     {
         private List<int> weekDays = new List<int>();
@@ -41,32 +40,30 @@ namespace SimpleBackup
         private List<int> hours = new List<int>();
         private List<int> minutes = new List<int>();
         private string cron = string.Empty;
-        private const string cronEmpty = "* * * * *";
-        private object id = null;
+        private const string CronEmpty = "* * * * *";
+        private object id;
         private string name = string.Empty;
         private string backupDirFrom = string.Empty;
         private string backupDirTo = string.Empty;
         private string backupFile = string.Empty;
         private string lastBackup = string.Empty;
-        public string lastHash = string.Empty;
+        public string LastHash = string.Empty;
         private string nextBackup = string.Empty;
         private string refBackup = string.Empty;
         private string lastFail = string.Empty;
-        private int killProcessSeconds = 0;
+        private int killProcessSeconds;
         private string closeProcess = string.Empty;
-
-        private int failCount = 0;
 
         public class LastBackupEntry
         {
-            public string FileName = string.Empty;
-            public DateTime Taken = DateTime.Now;
-            public string MD5Hash = string.Empty;
-            public LastBackupEntry(string FileName, DateTime Taken, string MD5Hash)
+            public string FileName;
+            public DateTime Taken;
+            public string Md5Hash;
+            public LastBackupEntry(string fileName, DateTime taken, string md5Hash)
             {
-                this.MD5Hash = MD5Hash;
-                this.Taken = Taken;
-                this.FileName = FileName;
+                this.Md5Hash = md5Hash;
+                this.Taken = taken;
+                this.FileName = fileName;
             }
         }
 
@@ -74,7 +71,7 @@ namespace SimpleBackup
 
 
 
-        private int numsSave = 0;
+        private int numbersSave;
 
         public override string ToString()
         {
@@ -94,7 +91,7 @@ namespace SimpleBackup
             {
                 if (cron == string.Empty)
                 {
-                    return cronEmpty;
+                    return CronEmpty;
                 }
                 else
                 {
@@ -102,22 +99,13 @@ namespace SimpleBackup
                 }
             }
 
-            set
-            {
-                cron = value;
-            }
+            set => cron = value;
         }
 
-        private BackgroundWorker backupThread = null;
+        private BackgroundWorker backupThread;
         private volatile bool backupRunning;
 
-        public bool BackupRunning
-        {
-            get
-            {
-                return backupRunning;
-            }
-        }
+        public bool BackupRunning => backupRunning;
 
         public void DoBackup()
         {
@@ -132,52 +120,26 @@ namespace SimpleBackup
 
         public delegate void BackupCompleted(CronEntry entry);
 
-        public event BackupCompleted OnbackupCompleted = null;    
+        public event BackupCompleted OnBackupCompleted;    
 
         void backupThread_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            if (OnbackupCompleted != null)
-            {
-                OnbackupCompleted(this);
-            }
+            OnBackupCompleted?.Invoke(this);
         }
 
         private volatile ZipDir.ZipReturn lastBackupReturn = new ZipDir.ZipReturn();
 
-        public ZipDir.ZipReturn LastBackupState
-        {
-            get
-            {
-                return lastBackupReturn;
-            }
-        }
-
-        public Type LastBackupExceptionType
-        {
-            get
-            {
-                return lastBackupReturn.ExceptionType;
-            }
-        }
+        public ZipDir.ZipReturn LastBackupState => lastBackupReturn;
 
         private string lastBackupFile = string.Empty;
 
-        public string LastBackupFile
-        {
-            get
-            {
-                return lastBackupFile;
-            }
-        }
+        public string LastBackupFile => lastBackupFile;
 
         private int retryHours = 1;
 
         public int RetryHours
         {
-            get 
-            {
-                return retryHours;
-            }
+            get => retryHours;
 
             set 
             {
@@ -192,6 +154,11 @@ namespace SimpleBackup
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the backup will skip locked files.
+        /// </summary>
+        /// <value><c>true</c> if locked files are skipped and the backup is allowed to continue; otherwise, <c>false</c>.</value>
+        public bool AllowLockedFiles { get; set; }
 
         private bool BackupExists()
         {
@@ -205,25 +172,24 @@ namespace SimpleBackup
         private void Backup()
         {
             backupRunning = true;
-            bool processStopped;
-            TakeProcessDown(out processStopped);
-            lastBackupFile = DirTo + "\\" + BackuFileFormatted;
-            lastHash = VPKSoft.Hashes.IOHash.MD5HashDirSimple(DirFrom);
+            TakeProcessDown(out var processStopped);
+            lastBackupFile = DirTo + "\\" + BackupFileFormatted;
+            LastHash = IoHash.Md5HashDirSimple(DirFrom);
 
             if (BackupExists())
             {
-                if (lastHash != string.Empty && LastBackups.Last().MD5Hash == lastHash)
+                if (LastHash != string.Empty && LastBackups.Last().Md5Hash == LastHash)
                 {
                     lastBackupReturn.Flags = ZipDir.ZipReturnFlags.SameHash;
                 }
                 else
                 {
-                    lastBackupReturn = ZipDir.Compress(DirFrom, lastBackupFile);
+                    lastBackupReturn = ZipDir.Compress(DirFrom, lastBackupFile, AllowLockedFiles);
                 }
             }
             else
             {
-                lastBackupReturn = ZipDir.Compress(DirFrom, lastBackupFile);
+                lastBackupReturn = ZipDir.Compress(DirFrom, lastBackupFile, AllowLockedFiles);
             }
 
             if (processStopped)
@@ -235,7 +201,7 @@ namespace SimpleBackup
 
         public static List<CronEntry> GetEntries(ref SQLiteConnection conn)
         {
-            List<CronEntry> retval = new List<CronEntry>();
+            List<CronEntry> result = new List<CronEntry>();
             List<int> ids = new List<int>();
             string sql = "SELECT ID FROM BACKUP ORDER BY ID ";
             using (SQLiteCommand command = new SQLiteCommand(conn))
@@ -251,16 +217,16 @@ namespace SimpleBackup
             }
             foreach (int id in ids)
             {
-                retval.Add(GetByID(id, ref conn));
+                result.Add(GetById(id, ref conn));
             }
-            return retval;
+            return result;
         }
 
-        public static CronEntry GetByID(int id, ref SQLiteConnection conn)
+        public static CronEntry GetById(int id, ref SQLiteConnection conn)
         {
-            CronEntry retval = new CronEntry();
+            CronEntry result = new CronEntry();
             string sql = "SELECT ID, NAME, LEAVEFILESMAX, BACKUP_FROMDIR, BACKUP_TODIR, BACKUP_FILENAME, LASTBACKUP, " +
-                         "NEXTBACKUP, REFTIME, FAILCOUNT, LASTFAIL, PROCESS, KILLSPAN_SECONDS, RETRYHOURS " + 
+                         "NEXTBACKUP, REFTIME, FAILCOUNT, LASTFAIL, PROCESS, KILLSPAN_SECONDS, RETRYHOURS, ALLOWLOCKEDFILES " + 
                          "FROM BACKUP WHERE ID = " + id + " ";
             using (SQLiteCommand command = new SQLiteCommand(conn))
             {
@@ -269,20 +235,21 @@ namespace SimpleBackup
                 {
                     if (dr.Read())
                     {
-                        retval.ID = dr.GetInt32(0);
-                        retval.Name = dr.GetString(1);
-                        retval.SaveBackupsNO = dr.GetInt32(2);
-                        retval.DirFrom = dr.GetString(3);
-                        retval.DirTo = dr.GetString(4);
-                        retval.BackupFile = dr.GetString(5);
-                        retval.lastBackup = dr.IsDBNull(6) ? string.Empty : dr.GetString(6);
-                        retval.nextBackup = dr.IsDBNull(7) ? string.Empty : dr.GetString(7);
-                        retval.refBackup = dr.IsDBNull(8) ? string.Empty : dr.GetString(8);
-                        retval.failCount = dr.IsDBNull(9) ? 0 : dr.GetInt32(9);
-                        retval.lastFail = dr.IsDBNull(10) ? string.Empty : dr.GetString(10);
-                        retval.closeProcess = dr.IsDBNull(11) ? string.Empty : dr.GetString(11);
-                        retval.killProcessSeconds = dr.IsDBNull(12) ? 0 : dr.GetInt32(12);
-                        retval.retryHours = dr.IsDBNull(13) ? 1 : dr.GetInt32(13);
+                        result.ID = dr.GetInt32(0);
+                        result.Name = dr.GetString(1);
+                        result.SaveBackupsNo = dr.GetInt32(2);
+                        result.DirFrom = dr.GetString(3);
+                        result.DirTo = dr.GetString(4);
+                        result.BackupFile = dr.GetString(5);
+                        result.lastBackup = dr.IsDBNull(6) ? string.Empty : dr.GetString(6);
+                        result.nextBackup = dr.IsDBNull(7) ? string.Empty : dr.GetString(7);
+                        result.refBackup = dr.IsDBNull(8) ? string.Empty : dr.GetString(8);
+                        result.FailCount = dr.IsDBNull(9) ? 0 : dr.GetInt32(9);
+                        result.lastFail = dr.IsDBNull(10) ? string.Empty : dr.GetString(10);
+                        result.closeProcess = dr.IsDBNull(11) ? string.Empty : dr.GetString(11);
+                        result.killProcessSeconds = dr.IsDBNull(12) ? 0 : dr.GetInt32(12);
+                        result.retryHours = dr.IsDBNull(13) ? 1 : dr.GetInt32(13);
+                        result.AllowLockedFiles = dr.GetInt32(14) == 1;
                     }
                 }
             }
@@ -295,7 +262,7 @@ namespace SimpleBackup
                 {
                     while (dr.Read())
                     {
-                        retval.WeekDays.Add(dr.GetInt32(0));
+                        result.WeekDays.Add(dr.GetInt32(0));
                     }
                 }
             }
@@ -308,7 +275,7 @@ namespace SimpleBackup
                 {
                     while (dr.Read())
                     {
-                        retval.Months.Add(dr.GetInt32(0));
+                        result.Months.Add(dr.GetInt32(0));
                     }
                 }
             }
@@ -321,7 +288,7 @@ namespace SimpleBackup
                 {
                     while (dr.Read())
                     {
-                        retval.Days.Add(dr.GetInt32(0));
+                        result.Days.Add(dr.GetInt32(0));
                     }
                 }
             }
@@ -334,7 +301,7 @@ namespace SimpleBackup
                 {
                     while (dr.Read())
                     {
-                        retval.Hours.Add(dr.GetInt32(0));
+                        result.Hours.Add(dr.GetInt32(0));
                     }
                 }
             }
@@ -347,7 +314,7 @@ namespace SimpleBackup
                 {
                     while (dr.Read())
                     {
-                        retval.Minutes.Add(dr.GetInt32(0));
+                        result.Minutes.Add(dr.GetInt32(0));
                     }
                 }
             }
@@ -361,7 +328,7 @@ namespace SimpleBackup
                 {
                     while (dr.Read())
                     {                        
-                        retval.lastBackups.Add(new LastBackupEntry(dr.GetString(0), FormulateDateTimeISO8601(dr.GetString(1)), dr.IsDBNull(2) ? string.Empty : dr.GetString(2)));
+                        result.lastBackups.Add(new LastBackupEntry(dr.GetString(0), FormulateDateTimeIso8601(dr.GetString(1)), dr.IsDBNull(2) ? string.Empty : dr.GetString(2)));
                     }
                 }
             }
@@ -374,25 +341,25 @@ namespace SimpleBackup
                 {
                     while (dr.Read())
                     {
-                        retval.cron = dr.GetString(0);
+                        result.cron = dr.GetString(0);
                     }
                 }
             }
 
-            return retval;
+            return result;
         }
 
         private bool ValidCron()
         {
             try
             {
-                if (Cron != cronEmpty)
+                if (Cron != CronEmpty)
                 {
-                    TimeCalcs.ConstructDate(1, Cron);
+                    TimeCalculations.ConstructDate(1, Cron);
                 }
                 else
                 {
-                    TimeCalcs.ConstructDate(1, WeekDays, Months, Days, Hours, Minutes);
+                    TimeCalculations.ConstructDate(1, WeekDays, Months, Days, Hours, Minutes);
                 }
                 return true;
             }
@@ -410,15 +377,15 @@ namespace SimpleBackup
             }
             try
             {
-                string sql = string.Format("DELETE FROM BACKUP WHERE ID = {0}; ", id) +
-                             string.Format("DELETE FROM WEEKDAYS WHERE ID = {0}; ", id) +
-                             string.Format("DELETE FROM MONTHS WHERE ID = {0}; ", id) +
-                             string.Format("DELETE FROM DAYS WHERE ID = {0}; ", id) +
-                             string.Format("DELETE FROM HOURS WHERE ID = {0}; ", id) +
-                             string.Format("DELETE FROM MINUTES WHERE ID = {0}; ", id) +
-                             string.Format("DELETE FROM CRONS WHERE ID = {0}; ", id) +
-                             string.Format("DELETE FROM LOGS WHERE ID_BACKUP = {0}; ", id) +
-                             string.Format("DELETE FROM TAKENBACKUPS WHERE ID = {0}; ", id);
+                string sql = $"DELETE FROM BACKUP WHERE ID = {id}; " +
+                             $"DELETE FROM WEEKDAYS WHERE ID = {id}; " +
+                             $"DELETE FROM MONTHS WHERE ID = {id}; " +
+                             $"DELETE FROM DAYS WHERE ID = {id}; " +
+                             $"DELETE FROM HOURS WHERE ID = {id}; " +
+                             $"DELETE FROM MINUTES WHERE ID = {id}; " +
+                             $"DELETE FROM CRONS WHERE ID = {id}; " +
+                             $"DELETE FROM LOGS WHERE ID_BACKUP = {id}; " +
+                             $"DELETE FROM TAKENBACKUPS WHERE ID = {id}; ";
 
                 using (SQLiteCommand command = new SQLiteCommand(conn))
                 {
@@ -447,48 +414,35 @@ namespace SimpleBackup
             }
             try
             {
-                string sql = string.Format("UPDATE BACKUP SET " +
-                                           "NAME = '{0}', " +
-                                           "LEAVEFILESMAX = {1}, " +
-                                           "BACKUP_FROMDIR = '{2}', " +
-                                           "BACKUP_TODIR = '{3}', " +
-                                           "BACKUP_FILENAME = '{4}', " +
-                                           "LASTBACKUP = {5}, " +
-                                           "NEXTBACKUP = '{6}', " +
-                                           "REFTIME = '{7}', " +
-                                           "FAILCOUNT = {8}, " +
-                                           "LASTFAIL = {9}, " +
-                                           "PROCESS = {10}, " +
-                                           "KILLSPAN_SECONDS = {11}, " +
-                                           "RETRYHOURS = {12} " +                                           
-                                           "WHERE ID = {13} ",
-                                           name.Replace("'", "''"),
-                                           numsSave,
-                                           backupDirFrom.Replace("'", "''"),
-                                           backupDirTo.Replace("'", "''"),
-                                           backupFile.Replace("'", "''"),
-                                           LastBackup == DateTime.MinValue ? "NULL" : "'" + LastBackup.ToString("yyyy-MM-dd HH':'mm':'ss.fff") + "'",
-                                           NextBackup == DateTime.MinValue ? RefDate.ToString("yyyy-MM-dd HH':'mm':'ss.fff") : NextBackup.ToString("yyyy-MM-dd HH':'mm':'ss.fff"),
-                                           RefDate == DateTime.MinValue ? DateTime.Now.ToString("yyyy-MM-dd HH':'mm':'ss.fff") : RefDate.ToString("yyyy-MM-dd HH':'mm':'ss.fff"),
-                                           failCount,
-                                           LastFail == DateTime.MinValue ? "NULL" : "'" + NextBackup.ToString("yyyy-MM-dd HH':'mm':'ss.fff") + "'",
-                                           closeProcess == string.Empty ? "NULL" : "'" + closeProcess.Replace("'", "''") + "'",
-                                           killProcessSeconds == 0 ? "NULL" : killProcessSeconds.ToString(), 
-                                           retryHours,
-                                           id);
+                string sql = string.Join(Environment.NewLine,
+                    "UPDATE BACKUP SET " + $"NAME = '{name.Replace("'", "''")}', ",
+                    $"LEAVEFILESMAX = {numbersSave}, ",
+                    $"BACKUP_FROMDIR = '{backupDirFrom.Replace("'", "''")}', ",
+                    $"BACKUP_TODIR = '{backupDirTo.Replace("'", "''")}', ",
+                    $"BACKUP_FILENAME = '{backupFile.Replace("'", "''")}', ",
+                    $"LASTBACKUP = {(LastBackup == DateTime.MinValue ? "NULL" : "'" + LastBackup.ToString("yyyy-MM-dd HH':'mm':'ss.fff") + "'")}, ",
+                    $"NEXTBACKUP = '{(NextBackup == DateTime.MinValue ? RefDate.ToString("yyyy-MM-dd HH':'mm':'ss.fff") : NextBackup.ToString("yyyy-MM-dd HH':'mm':'ss.fff"))}', ",
+                    $"REFTIME = '{(RefDate == DateTime.MinValue ? DateTime.Now.ToString("yyyy-MM-dd HH':'mm':'ss.fff") : RefDate.ToString("yyyy-MM-dd HH':'mm':'ss.fff"))}', ",
+                    $"FAILCOUNT = {FailCount}, ",
+                    $"LASTFAIL = {(LastFail == DateTime.MinValue ? "NULL" : "'" + NextBackup.ToString("yyyy-MM-dd HH':'mm':'ss.fff") + "'")}, ",
+                    $"PROCESS = {(closeProcess == string.Empty ? "NULL" : "'" + closeProcess.Replace("'", "''") + "'")}, ",
+                    $"KILLSPAN_SECONDS = {(killProcessSeconds == 0 ? "NULL" : killProcessSeconds.ToString())}, ",
+                    $"RETRYHOURS = {retryHours}, ",
+                    $"ALLOWLOCKEDFILES = {(AllowLockedFiles ? "1" : "0")}",
+                    $"WHERE ID = {id} ");
                 using (SQLiteCommand command = new SQLiteCommand(conn))
                 {
                     command.CommandText = sql;
                     command.ExecuteNonQuery();
                 }
 
-                sql = string.Format("DELETE FROM WEEKDAYS WHERE ID = {0}; ", id) +
-                        string.Format("DELETE FROM MONTHS WHERE ID = {0}; ", id) +
-                        string.Format("DELETE FROM DAYS WHERE ID = {0}; ", id) +
-                        string.Format("DELETE FROM HOURS WHERE ID = {0}; ", id) +
-                        string.Format("DELETE FROM MINUTES WHERE ID = {0}; ", id) +
-                        string.Format("DELETE FROM CRONS WHERE ID = {0}; ", id) +
-                        string.Format("DELETE FROM TAKENBACKUPS WHERE ID = {0}; ", id);
+                sql = $"DELETE FROM WEEKDAYS WHERE ID = {id}; " +
+                      $"DELETE FROM MONTHS WHERE ID = {id}; " +
+                      $"DELETE FROM DAYS WHERE ID = {id}; " +
+                      $"DELETE FROM HOURS WHERE ID = {id}; " +
+                      $"DELETE FROM MINUTES WHERE ID = {id}; " +
+                      $"DELETE FROM CRONS WHERE ID = {id}; " +
+                      $"DELETE FROM TAKENBACKUPS WHERE ID = {id}; ";
 
                 using (SQLiteCommand command = new SQLiteCommand(conn))
                 {
@@ -500,49 +454,43 @@ namespace SimpleBackup
                 sql = string.Empty;
                 foreach (int insert in weekDays)
                 {
-                    sql += string.Format("INSERT INTO WEEKDAYS(ID, WEEKDAY) VALUES({0}, {1});", id, insert);
+                    sql += $"INSERT INTO WEEKDAYS(ID, WEEKDAY) VALUES({id}, {insert});";
                 }
 
                 foreach (int insert in months)
                 {
-                    sql += string.Format("INSERT INTO MONTHS(ID, MONTH) VALUES({0}, {1}); ", id, insert);
+                    sql += $"INSERT INTO MONTHS(ID, MONTH) VALUES({id}, {insert}); ";
                 }
 
                 foreach (int insert in days)
                 {
-                    sql += string.Format("INSERT INTO DAYS(ID, DAY) VALUES({0}, {1}); ", id, insert);
+                    sql += $"INSERT INTO DAYS(ID, DAY) VALUES({id}, {insert}); ";
                 }
 
                 foreach (int insert in hours)
                 {
-                    sql += string.Format("INSERT INTO HOURS(ID, HOUR) VALUES({0}, {1}); ", id, insert);
+                    sql += $"INSERT INTO HOURS(ID, HOUR) VALUES({id}, {insert}); ";
                 }
 
                 foreach (int insert in minutes)
                 {
-                    sql += string.Format("INSERT INTO MINUTES(ID, MINUTE) VALUES({0}, {1}); ", id, insert);
+                    sql += $"INSERT INTO MINUTES(ID, MINUTE) VALUES({id}, {insert}); ";
                 }
 
                 foreach (LastBackupEntry insert in lastBackups)
                 {
-                    sql += string.Format("INSERT INTO TAKENBACKUPS(ID, FILENAME, TAKEN, MD5HASH) VALUES({0}, '{1}', '{2}', '{3}'); ", id, insert.FileName, insert.Taken.ToString("yyyy-MM-dd HH':'mm':'ss.fff"), insert.MD5Hash);
+                    sql +=
+                        $"INSERT INTO TAKENBACKUPS(ID, FILENAME, TAKEN, MD5HASH) VALUES({id}, '{insert.FileName}', '{insert.Taken:yyyy-MM-dd HH':'mm':'ss.fff}', '{insert.Md5Hash}'); ";
                 }
 
-                sql += string.Format("INSERT INTO CRONS(ID, CRON) VALUES({0}, '{1}'); ", id, Cron);
+                sql += $"INSERT INTO CRONS(ID, CRON) VALUES({id}, '{Cron}'); ";
 
 
                 if (!(lastBackupReturn.Empty && LastBackupFile == string.Empty))
                 {
-                    sql += string.Format("INSERT INTO LOGS(ID_BACKUP, FILES_SUCCESS, FILES_FAILED, DIRCOUNT, EXCEPTION_TYPE, FLAGS, BACKUPFILE, TAKEN) " +
-                                         "VALUES ({0}, {1}, {2}, {3}, '{4}', {5}, '{6}', '{7}'); ",
-                                         id,
-                                         lastBackupReturn.FileCount,
-                                         lastBackupReturn.FailedFileCount,
-                                         lastBackupReturn.DirCount,
-                                         lastBackupReturn.ExceptionType.ToString(),
-                                         (int)lastBackupReturn.Flags,
-                                         lastBackupFile.Replace("'", "''"),
-                                         LastBackup.ToString("yyyy-MM-dd HH':'mm':'ss.fff"));
+                    sql +=
+                        "INSERT INTO LOGS(ID_BACKUP, FILES_SUCCESS, FILES_FAILED, DIRCOUNT, EXCEPTION_TYPE, FLAGS, BACKUPFILE, TAKEN) " +
+                        $"VALUES ({id}, {lastBackupReturn.FileCount}, {lastBackupReturn.FailedFileCount}, {lastBackupReturn.DirCount}, '{lastBackupReturn.ExceptionType}', {(int) lastBackupReturn.Flags}, '{lastBackupFile.Replace("'", "''")}', '{LastBackup:yyyy-MM-dd HH':'mm':'ss.fff}'); ";
                 }
 
                 using (SQLiteCommand command = new SQLiteCommand(conn))
@@ -566,29 +514,27 @@ namespace SimpleBackup
             closed = false;
             if (closeProcess != string.Empty)
             {
-                Process[] processlist = System.Diagnostics.Process.GetProcesses();
+                Process[] processlist = Process.GetProcesses();
                 bool processFound = false;
-                List<Process> processKilllist = new List<Process>();
+                List<Process> processKillList = new List<Process>();
                 foreach (Process process in processlist)
                 {
                     try
                     {
-                        string processName = process.ProcessName;
                         string processFileName = process.Modules[0].FileName;
-                        int id = process.Id;
                         if (processFileName.ToUpper() == closeProcess.ToUpper())
                         {
-                            processKilllist.Add(process);
+                            processKillList.Add(process);
                         }
                     }
                     catch
                     {
-
+                        // ignored..
                     }
                 }
 
 
-                foreach (Process process in processKilllist)
+                foreach (Process process in processKillList)
                 {
                     try
                     {
@@ -615,7 +561,7 @@ namespace SimpleBackup
                                 }
                             }
                         }
-                        closed = processFound;
+                        closed = true;
                     }
                     catch
                     {
@@ -635,7 +581,7 @@ namespace SimpleBackup
             {
                 if (closeProcess != string.Empty)
                 {
-                    System.Diagnostics.Process.Start(ProcessFile);
+                    Process.Start(ProcessFile);
                 }
                 return true;
             }
@@ -697,18 +643,20 @@ namespace SimpleBackup
             }
             try
             {
-                string sql = string.Format("INSERT INTO BACKUP (NAME, LEAVEFILESMAX, BACKUP_FROMDIR, BACKUP_TODIR, " +
-                                           "BACKUP_FILENAME, REFTIME, PROCESS, KILLSPAN_SECONDS, RETRYHOURS) " +
-                                           "VALUES('{0}', {1}, '{2}', '{3}', '{4}', '{5}', {6}, {7}, {8}) ",
-                                           name.Replace("'", "''"),
-                                           numsSave,
-                                           backupDirFrom.Replace("'", "''"),
-                                           backupDirTo.Replace("'", "''"),
-                                           backupFile.Replace("'", "''"),
-                                           DateTime.Now.ToString("yyyy-MM-dd HH':'mm':'ss.fff"),
-                                           closeProcess == string.Empty ? "NULL" : "'" + closeProcess.Replace("'", "''") + "'",
-                                           killProcessSeconds == 0 ? "NULL" : killProcessSeconds.ToString(),
-                                           retryHours);
+                string sql = string.Join(Environment.NewLine,
+                    "INSERT INTO BACKUP (NAME, LEAVEFILESMAX, BACKUP_FROMDIR, BACKUP_TODIR, ",
+                    "BACKUP_FILENAME, REFTIME, PROCESS, KILLSPAN_SECONDS, RETRYHOURS, ALLOWLOCKEDFILES) ",
+                    $"VALUES('{name.Replace("'", "''")}',",
+                    $"{numbersSave},",
+                    $"'{backupDirFrom.Replace("'", "''")}',",
+                    $"'{backupDirTo.Replace("'", "''")}',",
+                    $"'{backupFile.Replace("'", "''")}',",
+                    $"'{DateTime.Now:yyyy-MM-dd HH':'mm':'ss.fff}',",
+                    $"{(closeProcess == string.Empty ? "NULL" : "'" + closeProcess.Replace("'", "''") + "'")},",
+                    $"{(killProcessSeconds == 0 ? "NULL" : killProcessSeconds.ToString())}, ",
+                    $"{retryHours}, ",
+                    $"{(AllowLockedFiles ? "1" : "0")}) ");
+
                 using (SQLiteCommand command = new SQLiteCommand(conn))
                 {
                     command.CommandText = sql;
@@ -732,30 +680,30 @@ namespace SimpleBackup
                 sql = string.Empty;
                 foreach (int insert in weekDays)
                 {
-                    sql += string.Format("INSERT INTO WEEKDAYS(ID, WEEKDAY) VALUES({0}, {1});", id, insert);
+                    sql += $"INSERT INTO WEEKDAYS(ID, WEEKDAY) VALUES({id}, {insert});";
                 }
 
                 foreach (int insert in months)
                 {
-                    sql += string.Format("INSERT INTO MONTHS(ID, MONTH) VALUES({0}, {1}); ", id, insert);
+                    sql += $"INSERT INTO MONTHS(ID, MONTH) VALUES({id}, {insert}); ";
                 }
 
                 foreach (int insert in days)
                 {
-                    sql += string.Format("INSERT INTO DAYS(ID, DAY) VALUES({0}, {1}); ", id, insert);
+                    sql += $"INSERT INTO DAYS(ID, DAY) VALUES({id}, {insert}); ";
                 }
 
                 foreach (int insert in hours)
                 {
-                    sql += string.Format("INSERT INTO HOURS(ID, HOUR) VALUES({0}, {1}); ", id, insert);
+                    sql += $"INSERT INTO HOURS(ID, HOUR) VALUES({id}, {insert}); ";
                 }
 
                 foreach (int insert in minutes)
                 {
-                    sql += string.Format("INSERT INTO MINUTES(ID, MINUTE) VALUES({0}, {1}); ", id, insert);
+                    sql += $"INSERT INTO MINUTES(ID, MINUTE) VALUES({id}, {insert}); ";
                 }
 
-                sql += string.Format("INSERT INTO CRONS(ID, CRON) VALUES({0}, '{1}'); ", id, Cron);
+                sql += $"INSERT INTO CRONS(ID, CRON) VALUES({id}, '{Cron}'); ";
 
                 using (SQLiteCommand command = new SQLiteCommand(conn))
                 {
@@ -774,7 +722,7 @@ namespace SimpleBackup
         public bool HandleTaken()
         {
             int dCount = 0;
-            while (lastBackups.Count > SaveBackupsNO)
+            while (lastBackups.Count > SaveBackupsNo)
             {
                 if (File.Exists(lastBackups.First().FileName))
                 {
@@ -793,7 +741,7 @@ namespace SimpleBackup
             return dCount > 0;
         }
 
-        private static DateTime FormulateDateTimeISO8601(string value)
+        private static DateTime FormulateDateTimeIso8601(string value)
         {
             if (value == string.Empty)
             {
@@ -814,15 +762,9 @@ namespace SimpleBackup
 
         public DateTime LastBackup
         {
-            get
-            {
-                return FormulateDateTimeISO8601(lastBackup);
-            }
+            get => FormulateDateTimeIso8601(lastBackup);
 
-            set
-            {
-                lastBackup = value.ToString("yyyy-MM-dd HH':'mm':'ss.fff");
-            }
+            set => lastBackup = value.ToString("yyyy-MM-dd HH':'mm':'ss.fff");
         }
 
         public void GenNextTime()
@@ -831,18 +773,18 @@ namespace SimpleBackup
             {
                 return;
             }
-            if (Cron != cronEmpty)
+            if (Cron != CronEmpty)
             {
                 while (NextBackup < DateTime.Now)
                 {
-                    NextBackup = TimeCalcs.ConstructDate(1, Cron, NextBackup)[0];
+                    NextBackup = TimeCalculations.ConstructDate(1, Cron, NextBackup)[0];
                 }
             }
             else
             {
                 while (NextBackup < DateTime.Now)
                 {
-                    NextBackup = TimeCalcs.ConstructDate(1, weekDays, months, days, hours, minutes, NextBackup)[0];
+                    NextBackup = TimeCalculations.ConstructDate(1, weekDays, months, days, hours, minutes, NextBackup)[0];
                 }
             }
         }
@@ -854,7 +796,7 @@ namespace SimpleBackup
             {
                 if (nextBackup != string.Empty)
                 {
-                    DateTime dt = FormulateDateTimeISO8601(nextBackup);
+                    DateTime dt = FormulateDateTimeIso8601(nextBackup);
                     if (dt == DateTime.MinValue)
                     {
                         return DateTime.Now;
@@ -871,18 +813,18 @@ namespace SimpleBackup
                         return DateTime.Now;
                     }
 
-                    if (Cron != cronEmpty)
+                    if (Cron != CronEmpty)
                     {
-                        return TimeCalcs.ConstructDate(1, Cron, LastBackup)[0];
+                        return TimeCalculations.ConstructDate(1, Cron, LastBackup)[0];
                     }
                     else
                     {
-                        return TimeCalcs.ConstructDate(1, weekDays, months, days, hours, minutes, LastBackup)[0];
+                        return TimeCalculations.ConstructDate(1, weekDays, months, days, hours, minutes, LastBackup)[0];
                     }
                 }
                 else if (lastBackup == string.Empty)
                 {
-                    DateTime dt = FormulateDateTimeISO8601(refBackup);
+                    DateTime dt = FormulateDateTimeIso8601(refBackup);
                     if (dt == DateTime.MinValue)
                     {
                         return DateTime.Now;
@@ -894,17 +836,17 @@ namespace SimpleBackup
                 }
                 if (nextBackup == string.Empty)
                 {
-                    if (Cron != cronEmpty)
+                    if (Cron != CronEmpty)
                     {
-                        return TimeCalcs.ConstructDate(1, Cron)[0];
+                        return TimeCalculations.ConstructDate(1, Cron)[0];
                     }
                     {
-                        return TimeCalcs.ConstructDate(1, weekDays, months, days, hours, minutes)[0];
+                        return TimeCalculations.ConstructDate(1, weekDays, months, days, hours, minutes)[0];
                     }
                 }
                 else
                 {
-                    DateTime dt = FormulateDateTimeISO8601(nextBackup);
+                    DateTime dt = FormulateDateTimeIso8601(nextBackup);
                     if (dt == DateTime.MinValue)
                     {
                         return DateTime.Now;
@@ -916,31 +858,19 @@ namespace SimpleBackup
                 }
             }
 
-            set
-            {
-                nextBackup = value.ToString("yyyy-MM-dd HH':'mm':'ss.fff");
-            }
+            set => nextBackup = value.ToString("yyyy-MM-dd HH':'mm':'ss.fff");
         }
 
         public DateTime RefDate
         {
-            get
-            {
-                return FormulateDateTimeISO8601(refBackup);
-            }
+            get => FormulateDateTimeIso8601(refBackup);
 
-            set
-            {
-                refBackup = value.ToString("yyyy-MM-dd HH':'mm':'ss.fff");
-            }
+            set => refBackup = value.ToString("yyyy-MM-dd HH':'mm':'ss.fff");
         }
 
         public int KillProcessSeconds
         {
-            get
-            {
-                return killProcessSeconds < 10 ? 10: killProcessSeconds;
-            }
+            get => killProcessSeconds < 10 ? 10: killProcessSeconds;
 
             set
             {
@@ -957,10 +887,7 @@ namespace SimpleBackup
 
         public bool KillProcessWait
         {
-            get
-            {
-                return killProcessSeconds >= 10;
-            }
+            get => killProcessSeconds >= 10;
 
             set
             {
@@ -973,143 +900,79 @@ namespace SimpleBackup
 
         public string ProcessFile
         {
-            get
-            {
-                return closeProcess;
-            }
+            get => closeProcess;
 
-            set
-            {
-                closeProcess = value;
-            }
+            set => closeProcess = value;
         }
 
 
-        public int FailCount
-        {
-            get
-            {
-                
-                return failCount;
-            }
-
-            set
-            {
-                failCount = value;
-            }
-        }
+        public int FailCount { get; set; }
 
         public DateTime LastFail
         {
-            get
-            {
-                return FormulateDateTimeISO8601(lastFail);
-            }
+            get => FormulateDateTimeIso8601(lastFail);
 
-            set
-            {
-                lastFail = value.ToString("yyyy-MM-dd HH':'mm':'ss.fff");
-            }
-
+            set => lastFail = value.ToString("yyyy-MM-dd HH':'mm':'ss.fff");
         }
 
         public object ID
         {
-            get
-            {
-                return id;
-            }
+            get => id;
 
-            set
-            {
-                id = value;
-            }
+            set => id = value;
         }
 
         public string Name
         {
-            get
-            {
-                return name;
-            }
+            get => name;
 
-            set
-            {
-                name = value;
-            }
+            set => name = value;
         }
 
         public string BackupFile
         {
-            get
-            {
-                return backupFile;
-            }
+            get => backupFile;
 
-            set
-            {
-                backupFile = value;
-            }
+            set => backupFile = value;
         }
 
-        public string BackuFileFormatted
-        {
-            get
-            {
-                return FormatBackupFilename(backupFile);
-            }
-        }
+        public string BackupFileFormatted => FormatBackupFilename(backupFile);
 
         public static string FormatBackupFilename(string fileName)
         {
-            string retval = fileName;
-            if (!retval.ToUpper().EndsWith(".zip".ToUpper()))
+            string result = fileName;
+            if (!result.ToUpper().EndsWith(".zip".ToUpper()))
             {
-                retval = retval + ".zip";
+                result = result + ".zip";
             }
 
             DateTime dt = DateTime.Now;
-            retval = retval.Replace("%Y", dt.Year.ToString());
-            retval = retval.Replace("%M", dt.Month.ToString().PadLeft(2, '0'));
-            retval = retval.Replace("%D", dt.Day.ToString().PadLeft(2, '0'));
-            retval = retval.Replace("%H", dt.Hour.ToString().PadLeft(2, '0'));
-            retval = retval.Replace("%m", dt.Minute.ToString().PadLeft(2, '0'));
-            retval = retval.Replace("%S", dt.Second.ToString().PadLeft(2, '0'));
-            return retval;
+            result = result.Replace("%Y", dt.Year.ToString());
+            result = result.Replace("%M", dt.Month.ToString().PadLeft(2, '0'));
+            result = result.Replace("%D", dt.Day.ToString().PadLeft(2, '0'));
+            result = result.Replace("%H", dt.Hour.ToString().PadLeft(2, '0'));
+            result = result.Replace("%m", dt.Minute.ToString().PadLeft(2, '0'));
+            result = result.Replace("%S", dt.Second.ToString().PadLeft(2, '0'));
+            return result;
         }
 
         public string DirFrom
         {
-            get
-            {
-                return backupDirFrom.TrimEnd('\\');
-            }
+            get => backupDirFrom.TrimEnd('\\');
 
-            set
-            {
-                backupDirFrom = value;
-            }
+            set => backupDirFrom = value;
         }
 
         public string DirTo
         {
-            get
-            {
-                return backupDirTo.TrimEnd('\\');
-            }
+            get => backupDirTo.TrimEnd('\\');
 
-            set
-            {
-                backupDirTo = value;
-            }
+            set => backupDirTo = value;
         }
 
-        public int SaveBackupsNO
+        public int SaveBackupsNo
         {
-            get
-            {
-                return numsSave;
-            }
+            get => numbersSave;
 
             set
             {
@@ -1121,88 +984,52 @@ namespace SimpleBackup
                 {
                     throw new Exception("Number of saves is too large.");
                 }
-                numsSave = value;
+                numbersSave = value;
             }
         }
 
         public List<LastBackupEntry> LastBackups
         {
-            get
-            {
-                return lastBackups;
-            }
+            get => lastBackups;
 
-            set
-            {
-                lastBackups = value;
-            }
+            set => lastBackups = value;
         }
 
 
         public List<int> WeekDays
         {
-            get
-            {
-                return weekDays;
-            }
+            get => weekDays;
 
-            set
-            {
-                weekDays = value;
-            }
+            set => weekDays = value;
         }
 
 
         public List<int> Months
         {
-            get
-            {
-                return months;
-            }
+            get => months;
 
-            set
-            {
-                months = value;
-            }
+            set => months = value;
         }
 
         public List<int> Days
         {
-            get
-            {
-                return days;
-            }
+            get => days;
 
-            set
-            {
-                days = value;
-            }
+            set => days = value;
         }
 
         public List<int> Hours
         {
-            get
-            {
-                return hours;
-            }
+            get => hours;
 
-            set
-            {
-                hours = value;
-            }
+            set => hours = value;
         }
 
         public List<int> Minutes
         {
-            get
-            {
-                return minutes;
-            }
+            get => minutes;
 
-            set
-            {
-                minutes = value;
-            }
+            set => minutes = value;
         }
 
     }

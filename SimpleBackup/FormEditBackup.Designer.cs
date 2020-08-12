@@ -77,10 +77,18 @@
             this.lbOnFailure1 = new System.Windows.Forms.Label();
             this.nudRetryHours = new System.Windows.Forms.NumericUpDown();
             this.lbOnFailure2 = new System.Windows.Forms.Label();
+            this.cbAllowLockedFiles = new System.Windows.Forms.CheckBox();
+            this.lbAllowLockedFiles = new System.Windows.Forms.Label();
+            this.tabControl1 = new System.Windows.Forms.TabControl();
+            this.tabCommon = new System.Windows.Forms.TabPage();
+            this.tabAdditional = new System.Windows.Forms.TabPage();
             ((System.ComponentModel.ISupportInitialize)(this.nudAmout)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudProcessKill)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pbTimeWarning)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudRetryHours)).BeginInit();
+            this.tabControl1.SuspendLayout();
+            this.tabCommon.SuspendLayout();
+            this.tabAdditional.SuspendLayout();
             this.SuspendLayout();
             // 
             // btCancel
@@ -89,7 +97,7 @@
             this.btCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.btCancel.Image = global::SimpleBackup.Properties.Resources.Cancel;
             this.btCancel.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btCancel.Location = new System.Drawing.Point(12, 546);
+            this.btCancel.Location = new System.Drawing.Point(12, 539);
             this.btCancel.Name = "btCancel";
             this.btCancel.Size = new System.Drawing.Size(86, 26);
             this.btCancel.TabIndex = 0;
@@ -102,13 +110,12 @@
             this.btOK.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.btOK.Image = global::SimpleBackup.Properties.Resources.OK;
             this.btOK.ImageAlign = System.Drawing.ContentAlignment.MiddleLeft;
-            this.btOK.Location = new System.Drawing.Point(551, 546);
+            this.btOK.Location = new System.Drawing.Point(551, 539);
             this.btOK.Name = "btOK";
             this.btOK.Size = new System.Drawing.Size(86, 26);
             this.btOK.TabIndex = 1;
             this.btOK.Text = "OK";
             this.btOK.UseVisualStyleBackColor = true;
-            this.btOK.Click += new System.EventHandler(this.btOK_Click);
             // 
             // clbWeekDays
             // 
@@ -116,6 +123,7 @@
             | System.Windows.Forms.AnchorStyles.Left)));
             this.clbWeekDays.CheckOnClick = true;
             this.clbWeekDays.FormattingEnabled = true;
+            this.clbWeekDays.IntegralHeight = false;
             this.clbWeekDays.Location = new System.Drawing.Point(12, 35);
             this.clbWeekDays.Name = "clbWeekDays";
             this.clbWeekDays.Size = new System.Drawing.Size(120, 124);
@@ -151,6 +159,7 @@
             | System.Windows.Forms.AnchorStyles.Left)));
             this.clbMonths.CheckOnClick = true;
             this.clbMonths.FormattingEnabled = true;
+            this.clbMonths.IntegralHeight = false;
             this.clbMonths.Location = new System.Drawing.Point(138, 35);
             this.clbMonths.Name = "clbMonths";
             this.clbMonths.Size = new System.Drawing.Size(120, 124);
@@ -164,6 +173,7 @@
             | System.Windows.Forms.AnchorStyles.Left)));
             this.clbDays.CheckOnClick = true;
             this.clbDays.FormattingEnabled = true;
+            this.clbDays.IntegralHeight = false;
             this.clbDays.Location = new System.Drawing.Point(264, 35);
             this.clbDays.Name = "clbDays";
             this.clbDays.Size = new System.Drawing.Size(120, 124);
@@ -199,6 +209,7 @@
             | System.Windows.Forms.AnchorStyles.Left)));
             this.clbHours.CheckOnClick = true;
             this.clbHours.FormattingEnabled = true;
+            this.clbHours.IntegralHeight = false;
             this.clbHours.Location = new System.Drawing.Point(390, 35);
             this.clbHours.Name = "clbHours";
             this.clbHours.Size = new System.Drawing.Size(120, 124);
@@ -223,6 +234,7 @@
             | System.Windows.Forms.AnchorStyles.Left)));
             this.clbMinutes.CheckOnClick = true;
             this.clbMinutes.FormattingEnabled = true;
+            this.clbMinutes.IntegralHeight = false;
             this.clbMinutes.Location = new System.Drawing.Point(516, 35);
             this.clbMinutes.Name = "clbMinutes";
             this.clbMinutes.Size = new System.Drawing.Size(120, 124);
@@ -232,6 +244,8 @@
             // 
             // lvDates
             // 
+            this.lvDates.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.lvDates.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.colWeekDay,
             this.colYear,
@@ -244,6 +258,7 @@
             this.lvDates.FullRowSelect = true;
             this.lvDates.GridLines = true;
             this.lvDates.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
+            this.lvDates.HideSelection = false;
             this.lvDates.Location = new System.Drawing.Point(12, 191);
             this.lvDates.MultiSelect = false;
             this.lvDates.Name = "lvDates";
@@ -303,7 +318,7 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(12, 295);
+            this.label1.Location = new System.Drawing.Point(8, 9);
             this.label1.Name = "label1";
             this.label1.Size = new System.Drawing.Size(76, 13);
             this.label1.TabIndex = 18;
@@ -311,24 +326,28 @@
             // 
             // tbBackupName
             // 
-            this.tbBackupName.Location = new System.Drawing.Point(161, 292);
+            this.tbBackupName.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.tbBackupName.Location = new System.Drawing.Point(157, 6);
             this.tbBackupName.Name = "tbBackupName";
-            this.tbBackupName.Size = new System.Drawing.Size(476, 20);
+            this.tbBackupName.Size = new System.Drawing.Size(450, 20);
             this.tbBackupName.TabIndex = 19;
             this.tbBackupName.TextChanged += new System.EventHandler(this.tbTextChange);
             // 
             // tbBackupDirFrom
             // 
-            this.tbBackupDirFrom.Location = new System.Drawing.Point(161, 318);
+            this.tbBackupDirFrom.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.tbBackupDirFrom.Location = new System.Drawing.Point(157, 32);
             this.tbBackupDirFrom.Name = "tbBackupDirFrom";
-            this.tbBackupDirFrom.Size = new System.Drawing.Size(436, 20);
+            this.tbBackupDirFrom.Size = new System.Drawing.Size(410, 20);
             this.tbBackupDirFrom.TabIndex = 21;
             this.tbBackupDirFrom.TextChanged += new System.EventHandler(this.tbTextChange);
             // 
             // label2
             // 
             this.label2.AutoSize = true;
-            this.label2.Location = new System.Drawing.Point(12, 321);
+            this.label2.Location = new System.Drawing.Point(8, 35);
             this.label2.Name = "label2";
             this.label2.Size = new System.Drawing.Size(90, 13);
             this.label2.TabIndex = 20;
@@ -336,16 +355,18 @@
             // 
             // tbBackupFile
             // 
-            this.tbBackupFile.Location = new System.Drawing.Point(161, 344);
+            this.tbBackupFile.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.tbBackupFile.Location = new System.Drawing.Point(157, 58);
             this.tbBackupFile.Name = "tbBackupFile";
-            this.tbBackupFile.Size = new System.Drawing.Size(475, 20);
+            this.tbBackupFile.Size = new System.Drawing.Size(449, 20);
             this.tbBackupFile.TabIndex = 24;
             this.tbBackupFile.TextChanged += new System.EventHandler(this.tbTextChange);
             // 
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(12, 347);
+            this.label3.Location = new System.Drawing.Point(8, 61);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(92, 13);
             this.label3.TabIndex = 23;
@@ -353,16 +374,18 @@
             // 
             // tbBackupDirTo
             // 
-            this.tbBackupDirTo.Location = new System.Drawing.Point(161, 370);
+            this.tbBackupDirTo.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.tbBackupDirTo.Location = new System.Drawing.Point(157, 84);
             this.tbBackupDirTo.Name = "tbBackupDirTo";
-            this.tbBackupDirTo.Size = new System.Drawing.Size(436, 20);
+            this.tbBackupDirTo.Size = new System.Drawing.Size(410, 20);
             this.tbBackupDirTo.TabIndex = 26;
             this.tbBackupDirTo.TextChanged += new System.EventHandler(this.tbTextChange);
             // 
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(12, 373);
+            this.label4.Location = new System.Drawing.Point(8, 87);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(59, 13);
             this.label4.TabIndex = 25;
@@ -370,14 +393,14 @@
             // 
             // nudAmout
             // 
-            this.nudAmout.Location = new System.Drawing.Point(12, 468);
+            this.nudAmout.Location = new System.Drawing.Point(62, 110);
             this.nudAmout.Minimum = new decimal(new int[] {
             1,
             0,
             0,
             0});
             this.nudAmout.Name = "nudAmout";
-            this.nudAmout.Size = new System.Drawing.Size(50, 20);
+            this.nudAmout.Size = new System.Drawing.Size(57, 20);
             this.nudAmout.TabIndex = 28;
             this.nudAmout.Value = new decimal(new int[] {
             1,
@@ -388,7 +411,7 @@
             // label5
             // 
             this.label5.AutoSize = true;
-            this.label5.Location = new System.Drawing.Point(12, 452);
+            this.label5.Location = new System.Drawing.Point(8, 112);
             this.label5.Name = "label5";
             this.label5.Size = new System.Drawing.Size(32, 13);
             this.label5.TabIndex = 29;
@@ -397,7 +420,7 @@
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(96, 452);
+            this.label6.Location = new System.Drawing.Point(128, 112);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(479, 91);
             this.label6.TabIndex = 30;
@@ -432,7 +455,7 @@
             this.lbCronHelp.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lbCronHelp.Location = new System.Drawing.Point(12, 9);
             this.lbCronHelp.Name = "lbCronHelp";
-            this.lbCronHelp.Size = new System.Drawing.Size(624, 153);
+            this.lbCronHelp.Size = new System.Drawing.Size(624, 150);
             this.lbCronHelp.TabIndex = 33;
             this.lbCronHelp.Text = resources.GetString("lbCronHelp.Text");
             this.lbCronHelp.Visible = false;
@@ -443,15 +466,17 @@
             // 
             // tbProcess
             // 
-            this.tbProcess.Location = new System.Drawing.Point(161, 396);
+            this.tbProcess.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.tbProcess.Location = new System.Drawing.Point(233, 6);
             this.tbProcess.Name = "tbProcess";
-            this.tbProcess.Size = new System.Drawing.Size(231, 20);
+            this.tbProcess.Size = new System.Drawing.Size(335, 20);
             this.tbProcess.TabIndex = 36;
             // 
             // lbProcess
             // 
             this.lbProcess.AutoSize = true;
-            this.lbProcess.Location = new System.Drawing.Point(12, 399);
+            this.lbProcess.Location = new System.Drawing.Point(9, 9);
             this.lbProcess.Name = "lbProcess";
             this.lbProcess.Size = new System.Drawing.Size(110, 13);
             this.lbProcess.TabIndex = 35;
@@ -460,7 +485,7 @@
             // cbKillProcess
             // 
             this.cbKillProcess.AutoSize = true;
-            this.cbKillProcess.Location = new System.Drawing.Point(398, 398);
+            this.cbKillProcess.Location = new System.Drawing.Point(12, 33);
             this.cbKillProcess.Name = "cbKillProcess";
             this.cbKillProcess.Size = new System.Drawing.Size(121, 17);
             this.cbKillProcess.TabIndex = 37;
@@ -469,14 +494,15 @@
             // 
             // nudProcessKill
             // 
-            this.nudProcessKill.Location = new System.Drawing.Point(553, 396);
+            this.nudProcessKill.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.nudProcessKill.Location = new System.Drawing.Point(233, 32);
             this.nudProcessKill.Minimum = new decimal(new int[] {
             10,
             0,
             0,
             0});
             this.nudProcessKill.Name = "nudProcessKill";
-            this.nudProcessKill.Size = new System.Drawing.Size(44, 20);
+            this.nudProcessKill.Size = new System.Drawing.Size(50, 20);
             this.nudProcessKill.TabIndex = 38;
             this.nudProcessKill.Value = new decimal(new int[] {
             10,
@@ -486,8 +512,9 @@
             // 
             // btSelectProcess
             // 
+            this.btSelectProcess.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btSelectProcess.Image = global::SimpleBackup.Properties.Resources.Application;
-            this.btSelectProcess.Location = new System.Drawing.Point(603, 396);
+            this.btSelectProcess.Location = new System.Drawing.Point(574, 6);
             this.btSelectProcess.Name = "btSelectProcess";
             this.btSelectProcess.Size = new System.Drawing.Size(33, 20);
             this.btSelectProcess.TabIndex = 39;
@@ -496,7 +523,7 @@
             // 
             // pbTimeWarning
             // 
-            this.pbTimeWarning.Location = new System.Drawing.Point(594, 508);
+            this.pbTimeWarning.Location = new System.Drawing.Point(595, 490);
             this.pbTimeWarning.Name = "pbTimeWarning";
             this.pbTimeWarning.Size = new System.Drawing.Size(32, 32);
             this.pbTimeWarning.TabIndex = 34;
@@ -504,8 +531,9 @@
             // 
             // btSelectBackupTo
             // 
+            this.btSelectBackupTo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btSelectBackupTo.Image = global::SimpleBackup.Properties.Resources.SelectDir;
-            this.btSelectBackupTo.Location = new System.Drawing.Point(603, 370);
+            this.btSelectBackupTo.Location = new System.Drawing.Point(573, 84);
             this.btSelectBackupTo.Name = "btSelectBackupTo";
             this.btSelectBackupTo.Size = new System.Drawing.Size(33, 20);
             this.btSelectBackupTo.TabIndex = 27;
@@ -514,8 +542,9 @@
             // 
             // btSelectBackupFrom
             // 
+            this.btSelectBackupFrom.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btSelectBackupFrom.Image = global::SimpleBackup.Properties.Resources.SelectDir;
-            this.btSelectBackupFrom.Location = new System.Drawing.Point(603, 318);
+            this.btSelectBackupFrom.Location = new System.Drawing.Point(573, 32);
             this.btSelectBackupFrom.Name = "btSelectBackupFrom";
             this.btSelectBackupFrom.Size = new System.Drawing.Size(33, 20);
             this.btSelectBackupFrom.TabIndex = 22;
@@ -525,7 +554,7 @@
             // lbOnFailure1
             // 
             this.lbOnFailure1.AutoSize = true;
-            this.lbOnFailure1.Location = new System.Drawing.Point(12, 424);
+            this.lbOnFailure1.Location = new System.Drawing.Point(9, 62);
             this.lbOnFailure1.Name = "lbOnFailure1";
             this.lbOnFailure1.Size = new System.Drawing.Size(102, 13);
             this.lbOnFailure1.TabIndex = 40;
@@ -533,7 +562,7 @@
             // 
             // nudRetryHours
             // 
-            this.nudRetryHours.Location = new System.Drawing.Point(161, 422);
+            this.nudRetryHours.Location = new System.Drawing.Point(233, 58);
             this.nudRetryHours.Maximum = new decimal(new int[] {
             24,
             0,
@@ -556,11 +585,82 @@
             // lbOnFailure2
             // 
             this.lbOnFailure2.AutoSize = true;
-            this.lbOnFailure2.Location = new System.Drawing.Point(217, 424);
+            this.lbOnFailure2.Location = new System.Drawing.Point(289, 60);
             this.lbOnFailure2.Name = "lbOnFailure2";
             this.lbOnFailure2.Size = new System.Drawing.Size(241, 13);
             this.lbOnFailure2.TabIndex = 42;
             this.lbOnFailure2.Text = "hours. (NOTE: The schedule will not be updated.)";
+            // 
+            // cbAllowLockedFiles
+            // 
+            this.cbAllowLockedFiles.AutoSize = true;
+            this.cbAllowLockedFiles.Location = new System.Drawing.Point(233, 86);
+            this.cbAllowLockedFiles.Name = "cbAllowLockedFiles";
+            this.cbAllowLockedFiles.Size = new System.Drawing.Size(15, 14);
+            this.cbAllowLockedFiles.TabIndex = 43;
+            this.cbAllowLockedFiles.UseVisualStyleBackColor = true;
+            // 
+            // lbAllowLockedFiles
+            // 
+            this.lbAllowLockedFiles.AutoSize = true;
+            this.lbAllowLockedFiles.Location = new System.Drawing.Point(9, 86);
+            this.lbAllowLockedFiles.Name = "lbAllowLockedFiles";
+            this.lbAllowLockedFiles.Size = new System.Drawing.Size(88, 13);
+            this.lbAllowLockedFiles.TabIndex = 44;
+            this.lbAllowLockedFiles.Text = "Allow locked files";
+            // 
+            // tabControl1
+            // 
+            this.tabControl1.Controls.Add(this.tabCommon);
+            this.tabControl1.Controls.Add(this.tabAdditional);
+            this.tabControl1.Location = new System.Drawing.Point(12, 292);
+            this.tabControl1.Name = "tabControl1";
+            this.tabControl1.SelectedIndex = 0;
+            this.tabControl1.Size = new System.Drawing.Size(625, 241);
+            this.tabControl1.TabIndex = 45;
+            // 
+            // tabCommon
+            // 
+            this.tabCommon.Controls.Add(this.tbBackupName);
+            this.tabCommon.Controls.Add(this.label1);
+            this.tabCommon.Controls.Add(this.label2);
+            this.tabCommon.Controls.Add(this.tbBackupDirFrom);
+            this.tabCommon.Controls.Add(this.btSelectBackupFrom);
+            this.tabCommon.Controls.Add(this.label3);
+            this.tabCommon.Controls.Add(this.tbBackupFile);
+            this.tabCommon.Controls.Add(this.label4);
+            this.tabCommon.Controls.Add(this.tbBackupDirTo);
+            this.tabCommon.Controls.Add(this.btSelectBackupTo);
+            this.tabCommon.Controls.Add(this.label6);
+            this.tabCommon.Controls.Add(this.label5);
+            this.tabCommon.Controls.Add(this.nudAmout);
+            this.tabCommon.Location = new System.Drawing.Point(4, 22);
+            this.tabCommon.Name = "tabCommon";
+            this.tabCommon.Padding = new System.Windows.Forms.Padding(3);
+            this.tabCommon.Size = new System.Drawing.Size(617, 215);
+            this.tabCommon.TabIndex = 0;
+            this.tabCommon.Text = "Common";
+            this.tabCommon.UseVisualStyleBackColor = true;
+            // 
+            // tabAdditional
+            // 
+            this.tabAdditional.Controls.Add(this.tbProcess);
+            this.tabAdditional.Controls.Add(this.lbProcess);
+            this.tabAdditional.Controls.Add(this.lbAllowLockedFiles);
+            this.tabAdditional.Controls.Add(this.cbKillProcess);
+            this.tabAdditional.Controls.Add(this.cbAllowLockedFiles);
+            this.tabAdditional.Controls.Add(this.nudProcessKill);
+            this.tabAdditional.Controls.Add(this.lbOnFailure2);
+            this.tabAdditional.Controls.Add(this.btSelectProcess);
+            this.tabAdditional.Controls.Add(this.nudRetryHours);
+            this.tabAdditional.Controls.Add(this.lbOnFailure1);
+            this.tabAdditional.Location = new System.Drawing.Point(4, 22);
+            this.tabAdditional.Name = "tabAdditional";
+            this.tabAdditional.Padding = new System.Windows.Forms.Padding(3);
+            this.tabAdditional.Size = new System.Drawing.Size(617, 215);
+            this.tabAdditional.TabIndex = 1;
+            this.tabAdditional.Text = "Additional";
+            this.tabAdditional.UseVisualStyleBackColor = true;
             // 
             // FormEditBackup
             // 
@@ -568,32 +668,12 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.btCancel;
-            this.ClientSize = new System.Drawing.Size(649, 584);
-            this.Controls.Add(this.lbOnFailure2);
-            this.Controls.Add(this.nudRetryHours);
-            this.Controls.Add(this.lbOnFailure1);
-            this.Controls.Add(this.btSelectProcess);
-            this.Controls.Add(this.nudProcessKill);
-            this.Controls.Add(this.cbKillProcess);
-            this.Controls.Add(this.tbProcess);
-            this.Controls.Add(this.lbProcess);
-            this.Controls.Add(this.pbTimeWarning);
+            this.ClientSize = new System.Drawing.Size(649, 577);
             this.Controls.Add(this.lbCronHelp);
+            this.Controls.Add(this.pbTimeWarning);
+            this.Controls.Add(this.tabControl1);
             this.Controls.Add(this.tbCronEntry);
             this.Controls.Add(this.cbUseCronEntry);
-            this.Controls.Add(this.label6);
-            this.Controls.Add(this.label5);
-            this.Controls.Add(this.nudAmout);
-            this.Controls.Add(this.btSelectBackupTo);
-            this.Controls.Add(this.tbBackupDirTo);
-            this.Controls.Add(this.label4);
-            this.Controls.Add(this.tbBackupFile);
-            this.Controls.Add(this.label3);
-            this.Controls.Add(this.btSelectBackupFrom);
-            this.Controls.Add(this.tbBackupDirFrom);
-            this.Controls.Add(this.label2);
-            this.Controls.Add(this.tbBackupName);
-            this.Controls.Add(this.label1);
             this.Controls.Add(this.lvDates);
             this.Controls.Add(this.cbMinutesAll);
             this.Controls.Add(this.clbMinutes);
@@ -618,6 +698,11 @@
             ((System.ComponentModel.ISupportInitialize)(this.nudProcessKill)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pbTimeWarning)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.nudRetryHours)).EndInit();
+            this.tabControl1.ResumeLayout(false);
+            this.tabCommon.ResumeLayout(false);
+            this.tabCommon.PerformLayout();
+            this.tabAdditional.ResumeLayout(false);
+            this.tabAdditional.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -672,5 +757,10 @@
         private System.Windows.Forms.Label lbOnFailure1;
         private System.Windows.Forms.NumericUpDown nudRetryHours;
         private System.Windows.Forms.Label lbOnFailure2;
+        private System.Windows.Forms.CheckBox cbAllowLockedFiles;
+        private System.Windows.Forms.Label lbAllowLockedFiles;
+        private System.Windows.Forms.TabControl tabControl1;
+        private System.Windows.Forms.TabPage tabCommon;
+        private System.Windows.Forms.TabPage tabAdditional;
     }
 }

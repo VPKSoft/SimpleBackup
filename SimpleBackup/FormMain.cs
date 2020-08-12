@@ -1,7 +1,7 @@
 ﻿#region License
 /*
 A simple backup software to backup directories with a schedule.
-Copyright (C) 2015  VPKSoft
+Copyright (C) 2020 VPKSoft
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -20,39 +20,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Data.SQLite;
-using System.IO;
 using Microsoft.Win32;
 using System.Threading;
 using VPKSoft.LangLib;
-using VPKSoft.About;
 using System.Globalization;
+using System.Reflection;
 
 namespace SimpleBackup
 {
     public partial class FormMain : DBLangEngineWinforms
     {
-        bool quitFromMenu = false;
-        bool BackupsRunning
-        {
-            get
-            {
-                return false;
-            }
-        }
+        bool quitFromMenu;
 
 
-        SQLiteConnection conn = null;
+        SQLiteConnection conn;
 
-        BackgroundTimer tmCheckBackups = new BackgroundTimer(60000);
-        BackgroundTimer tmWatchProcesses = new BackgroundTimer(1000);
+        readonly BackgroundTimer tmCheckBackups = new BackgroundTimer(60000);
+        readonly BackgroundTimer tmWatchProcesses = new BackgroundTimer(1000);
 
         public FormMain()
         {
@@ -60,13 +46,14 @@ namespace SimpleBackup
 
             try
             {
+                // ReSharper disable twice StringLiteralTypo
                 DBLangEngine.DBName = "simplebackup_lang.sqlite";
 
-                DBLangEngine.InitalizeLanguage("SimpleBackup.Messages");
+                DBLangEngine.InitializeLanguage("SimpleBackup.Messages");
 
                 if (VPKSoft.LangLib.Utils.ShouldLocalize() != null)
                 {
-                    DBLangEngine.InitalizeLanguage("SimpleBackup.Messages", VPKSoft.LangLib.Utils.ShouldLocalize(), false);
+                    DBLangEngine.InitializeLanguage("SimpleBackup.Messages", VPKSoft.LangLib.Utils.ShouldLocalize(), false);
                     return; // After localization don't do anything more.
                 }
             } 
@@ -85,6 +72,7 @@ namespace SimpleBackup
             Program.MakeDataDir();
             try
             {
+                // ReSharper disable twice StringLiteralTypo
                 conn = new SQLiteConnection("Data Source=" + Program.AppDataDir + "simplebackup.sqlite;Pooling=true;FailIfMissing=false");
                 conn.Open();
             } 
@@ -113,6 +101,16 @@ namespace SimpleBackup
             tmWatchProcesses.Start();
             tmCheckBackups.Start();
             noIco.BalloonTipText = DBLangEngine.GetMessage("msgWorkBackground", "Running on the background...|As in running on the system tray..");
+
+            // copy the localization from the menu items..
+            tsbAddBackup.Text = mnuAddBackup.Text;
+            tsbAddBackup.ToolTipText = mnuAddBackup.Text;
+            tsbEditBackup.Text = mnuEditBackup.Text;
+            tsbEditBackup.ToolTipText = mnuEditBackup.Text;
+            tsbDeleteBackup.Text = mnuDeleteBackup.Text;
+            tsbDeleteBackup.ToolTipText = mnuDeleteBackup.Text;
+            tsbAbout.Text = mnuAbout.Text;
+            tsbAbout.ToolTipText = mnuAbout.Text;
         }
 
         void SetQuiEnabled(bool enabled)
@@ -128,10 +126,9 @@ namespace SimpleBackup
         void WaitForBackups()
         {
             bool backupsRunning = false;
-            FormWaitBackups frmWait;
             foreach (ListViewObjectItem lvi in lvBackups.Items)
             {
-                if ((lvi.ItemObject as CronEntry).BackupRunning)
+                if (((CronEntry) lvi.ItemObject).BackupRunning)
                 {
                     backupsRunning = true;
                 }
@@ -139,7 +136,7 @@ namespace SimpleBackup
 
             if (backupsRunning)
             {
-                frmWait = new FormWaitBackups();
+                var frmWait = new FormWaitBackups();
                 frmWait.Show();
                 SetQuiEnabled(false);
                 while (backupsRunning)
@@ -147,7 +144,7 @@ namespace SimpleBackup
                     backupsRunning = false;
                     foreach (ListViewObjectItem lvi in lvBackups.Items)
                     {
-                        if ((lvi.ItemObject as CronEntry).BackupRunning)
+                        if (((CronEntry) lvi.ItemObject).BackupRunning)
                         {
                             backupsRunning = true;
                         }
@@ -164,7 +161,7 @@ namespace SimpleBackup
             bool running = false;
             foreach (ListViewObjectItem lvi in lvBackups.Items)
             {
-                if ((lvi.ItemObject as CronEntry).BackupRunning)
+                if (((CronEntry) lvi.ItemObject).BackupRunning)
                 {
                     lvi.ImageIndex = 1;
                     running = true;
@@ -180,11 +177,11 @@ namespace SimpleBackup
         {
             foreach (ListViewObjectItem lvi in lvBackups.Items)
             {
-                if (!(lvi.ItemObject as CronEntry).BackupRunning)
+                if (!((CronEntry) lvi.ItemObject).BackupRunning)
                 {
-                    if (DateTime.Now >= (lvi.ItemObject as CronEntry).NextBackup)
+                    if (DateTime.Now >= ((CronEntry) lvi.ItemObject).NextBackup)
                     {
-                        (lvi.ItemObject as CronEntry).DoBackup();
+                        ((CronEntry)lvi.ItemObject)?.DoBackup();
                         pbProgress.Image = Properties.Resources.AnimatedBar;
                     }
                 }
@@ -197,6 +194,7 @@ namespace SimpleBackup
             Close();
         }
 
+        [Serializable]
         public class ListViewObjectItem: ListViewItem
         {
             public ListViewObjectItem(string text): base(text) {}
@@ -212,8 +210,8 @@ namespace SimpleBackup
                 CronEntry en = (CronEntry)ItemObject;
                 this.Text = en.ToString();
                 this.ToolTipText = en.LastBackupState.StatusString;
-                this.SubItems[1].Text = en.LastBackup == DateTime.MinValue ? "-" : en.LastBackup.ToString();
-                this.SubItems[2].Text = en.NextBackup.ToString();
+                this.SubItems[1].Text = en.LastBackup == DateTime.MinValue ? "-" : en.LastBackup.ToString(CultureInfo.CurrentCulture);
+                this.SubItems[2].Text = en.NextBackup.ToString(CultureInfo.CurrentCulture);
             }
         }
 
@@ -262,11 +260,11 @@ namespace SimpleBackup
                     {
                         CronEntry en = entries[i];
                         ListViewObjectItem item = new ListViewObjectItem(en);
-                        en.OnbackupCompleted += FormMain_OnbackupCompleted;
+                        en.OnBackupCompleted += FormMain_OnBackupCompleted;
                         item.ImageIndex = 0;
                         item.StateImageIndex = -1;
-                        item.SubItems.Add(en.LastBackup == DateTime.MinValue ? "-" : en.LastBackup.ToString());
-                        item.SubItems.Add(en.NextBackup.ToString());
+                        item.SubItems.Add(en.LastBackup == DateTime.MinValue ? "-" : en.LastBackup.ToString(CultureInfo.CurrentCulture));
+                        item.SubItems.Add(en.NextBackup.ToString(CultureInfo.CurrentCulture));
                         lvBackups.Items.Add(item);
                     }
                 }
@@ -277,11 +275,11 @@ namespace SimpleBackup
                 foreach (CronEntry en in CronEntry.GetEntries(ref conn))
                 {
                     ListViewObjectItem item = new ListViewObjectItem(en);
-                    en.OnbackupCompleted += FormMain_OnbackupCompleted;
+                    en.OnBackupCompleted += FormMain_OnBackupCompleted;
                     item.ImageIndex = 0;
                     item.StateImageIndex = -1;
-                    item.SubItems.Add(en.LastBackup == DateTime.MinValue ? "-" : en.LastBackup.ToString());
-                    item.SubItems.Add(en.NextBackup.ToString());
+                    item.SubItems.Add(en.LastBackup == DateTime.MinValue ? "-" : en.LastBackup.ToString(CultureInfo.CurrentCulture));
+                    item.SubItems.Add(en.NextBackup.ToString(CultureInfo.CurrentCulture));
                     lvBackups.Items.Add(item);
                 }
             }
@@ -289,7 +287,7 @@ namespace SimpleBackup
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (!quitFromMenu && !BackupsRunning)
+            if (!quitFromMenu)
             {
                 e.Cancel = true;
                 Hide();
@@ -327,28 +325,19 @@ namespace SimpleBackup
             Show();
         }
 
-
-
-        private void btAdd_Click(object sender, EventArgs e)
-        {
-            FormEditBackup.ExecuteAdd(ref conn);
-        }
-
-        
-
         private void btRunNow_Click(object sender, EventArgs e)
         {
             foreach (ListViewObjectItem lvi in lvBackups.SelectedItems)
             {
-                if (!(lvi.ItemObject as CronEntry).BackupRunning)
+                if (!((CronEntry) lvi.ItemObject).BackupRunning)
                 {
-                    (lvi.ItemObject as CronEntry).DoBackup();
+                    ((CronEntry) lvi.ItemObject)?.DoBackup();
                     pbProgress.Image = Properties.Resources.AnimatedBar;
                 }
             }
         }
 
-        void FormMain_OnbackupCompleted(CronEntry entry)
+        void FormMain_OnBackupCompleted(CronEntry entry)
         {
             DateTime dt = DateTime.Now;
 
@@ -368,7 +357,7 @@ namespace SimpleBackup
             }
             else
             {
-                CronEntry.LastBackupEntry e = new CronEntry.LastBackupEntry(entry.LastBackupFile, dt, entry.lastHash);
+                CronEntry.LastBackupEntry e = new CronEntry.LastBackupEntry(entry.LastBackupFile, dt, entry.LastHash);
                 entry.LastBackups.Add(e);
                 entry.LastBackup = dt;
                 entry.GenNextTime();
@@ -380,7 +369,6 @@ namespace SimpleBackup
             {
                 lvi.UpdateItemObject();
                 CronEntry en = (CronEntry)lvi.ItemObject;
-                Type t = en.LastBackupExceptionType;
                 ZipDir.ZipReturn r = en.LastBackupState;
                 if (r.Flags == ZipDir.ZipReturnFlags.Success)
                 {
@@ -395,7 +383,6 @@ namespace SimpleBackup
                     lvi.ImageIndex = 2;
                 }
             }
-//            ListBackups();
         }
 
         private void mnuAddBackup_Click(object sender, EventArgs e)
@@ -410,7 +397,7 @@ namespace SimpleBackup
             {
                 return;
             }
-            CronEntry entry = (lvBackups.SelectedItems[0] as ListViewObjectItem).ItemObject as CronEntry;
+            CronEntry entry = (lvBackups.SelectedItems[0] as ListViewObjectItem)?.ItemObject as CronEntry;
             FormEditBackup.ExecuteEdit(ref entry , ref conn);
         }
 
@@ -420,18 +407,19 @@ namespace SimpleBackup
             {
                 return;
             }
-            CronEntry entry = (lvBackups.SelectedItems[0] as ListViewObjectItem).ItemObject as CronEntry;
+            CronEntry entry = (lvBackups.SelectedItems[0] as ListViewObjectItem)?.ItemObject as CronEntry;
             if (MessageBox.Show(DBLangEngine.GetMessage("msgDeleteBackup", "Delete backup '{0}'?|Query to confirm a backup deletion", entry), DBLangEngine.GetMessage("msgConfirm", "Confirm"), MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
             {
-                entry.Delete(ref conn);
+                entry?.Delete(ref conn);
                 ListBackups(true);
             }
         }
 
         private void mnuAbout_Click(object sender, EventArgs e)
         {
-            new VPKSoft.About.FormAbout(this, System.Reflection.Assembly.GetExecutingAssembly(), "GPL", "http://www.gnu.org/licenses/gpl-3.0.txt"); // 12.10.17, Added my "universal" about dialog..
-//            new FormAbout().ShowDialog(); // 12.10.17, Disregraded this
+            // ReSharper disable once ObjectCreationAsStatement
+            new VPKSoft.VersionCheck.Forms.FormAbout(this, Assembly.GetEntryAssembly(), "GPL",
+                "http://www.gnu.org/licenses/gpl-3.0.txt", "https://www.vpksoft.net/versions/version.php");
         }
 
         private void FormMain_Load(object sender, EventArgs e)
@@ -457,6 +445,27 @@ namespace SimpleBackup
                     noIco.ShowBalloonTip(1000);
                 }
             }
+        }
+
+        private void EnableDisableGui()
+        {
+            mnuEditBackup.Enabled = lvBackups.SelectedItems.Count > 0;
+            mnuDeleteBackup.Enabled = lvBackups.SelectedItems.Count > 0;
+            mnuRunNow.Enabled = lvBackups.SelectedItems.Count > 0;
+            btRunNow.Enabled = lvBackups.SelectedItems.Count > 0;
+            tsbDeleteBackup.Enabled = lvBackups.SelectedItems.Count > 0;
+            tsbEditBackup.Enabled = lvBackups.SelectedItems.Count > 0;
+        }
+
+
+        private void lvBackups_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            EnableDisableGui();
+        }
+
+        private void FormMain_VisibleChanged(object sender, EventArgs e)
+        {
+            EnableDisableGui();
         }
     }
 }

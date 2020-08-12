@@ -1,7 +1,7 @@
 ﻿#region License
 /*
-A "timer" which based on the BackroundWorker class.
-Copyright (C) 2015  VPKSoft
+A simple backup software to backup directories with a schedule.
+Copyright (C) 2020 VPKSoft
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -19,10 +19,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.ComponentModel;
 using System.Threading;
 
@@ -31,20 +27,20 @@ namespace SimpleBackup
 {
     public class BackgroundTimer
     {
-        BackgroundWorker bgTimer = new BackgroundWorker();
+        readonly BackgroundWorker bgTimer = new BackgroundWorker();
         private int resolution = 20;
         private int interval = 1000;
         private double rounds = 50;
-        private bool enabled = false;
-        private bool stopped = false;
+        private bool enabled;
+        private bool stopped;
 
-        private object _lock = new object();
+        private readonly object @lock = new object();
 
         public bool Enabled
         {
             get
             {
-                lock (_lock)
+                lock (@lock)
                 {
                     return enabled;
                 }
@@ -52,7 +48,7 @@ namespace SimpleBackup
 
             set
             {
-                lock (_lock)
+                lock (@lock)
                 {
                     enabled = value;
                     if (value && !bgTimer.IsBusy)
@@ -67,7 +63,7 @@ namespace SimpleBackup
         {
             get
             {
-                lock (_lock)
+                lock (@lock)
                 {
                     return stopped;
                 }
@@ -75,7 +71,7 @@ namespace SimpleBackup
 
             set
             {
-                lock (_lock)
+                lock (@lock)
                 {
                     if (value && !bgTimer.IsBusy && enabled)
                     {
@@ -98,7 +94,7 @@ namespace SimpleBackup
         {
             get
             {
-                lock (_lock)
+                lock (@lock)
                 {
                     return resolution;
                 }
@@ -106,7 +102,7 @@ namespace SimpleBackup
 
             set
             {
-                lock (_lock)
+                lock (@lock)
                 {
 
                     if (value <= 0 || value > interval)
@@ -115,7 +111,7 @@ namespace SimpleBackup
                     }
                     else
                     {
-                        rounds = (double)interval / (double)value;
+                        rounds = interval / (double)value;
                         resolution = value;
                     }
                 }
@@ -126,7 +122,7 @@ namespace SimpleBackup
         {
             get
             {
-                lock (_lock)
+                lock (@lock)
                 {
                     return interval;
                 }
@@ -134,7 +130,7 @@ namespace SimpleBackup
 
             set
             {
-                lock (_lock)
+                lock (@lock)
                 {
                     if (value <= 0 || value < interval)
                     {
@@ -142,7 +138,7 @@ namespace SimpleBackup
                     }
                     else
                     {
-                        rounds = (double)value / (double)resolution;
+                        rounds = value / (double)resolution;
                         interval = value;
                     }
                 }
@@ -186,10 +182,7 @@ namespace SimpleBackup
         {
             if (enabled)
             {
-                if (TimerElapsed != null)
-                {
-                    TimerElapsed(this, EventArgs.Empty);
-                }
+                TimerElapsed?.Invoke(this, EventArgs.Empty);
                 bgTimer.RunWorkerAsync();
             }
         }
@@ -213,6 +206,6 @@ namespace SimpleBackup
 
         public delegate void Elapsed(object sender, EventArgs e);
 
-        public event Elapsed TimerElapsed = null;
+        public event Elapsed TimerElapsed;
     }
 }

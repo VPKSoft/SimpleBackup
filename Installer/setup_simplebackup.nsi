@@ -4,7 +4,7 @@ Name SimpleBackup
 
 # General Symbol Definitions
 !define REGKEY "SOFTWARE\$(^Name)"
-!define VERSION 1.0.3.1
+!define VERSION 1.0.4.0
 !define COMPANY VPKSoft
 !define URL http://www.vpksoft.net
 
@@ -18,6 +18,8 @@ Name SimpleBackup
 !define MUI_STARTMENUPAGE_DEFAULTFOLDER SimpleBackup
 !define MUI_UNICON UnBackup.ico
 !define MUI_UNFINISHPAGE_NOAUTOCLOSE
+!define MUI_FINISHPAGE_RUN # this needs to be not-defined for the MUI_FINISHPAGE_RUN_FUNCTION to work..
+!define MUI_FINISHPAGE_RUN_FUNCTION "RunAsCurrentUser" # The check box for a query whether to run the installed software as the current user after the installation..
 
 # Included files
 !include "x64.nsh"
@@ -44,14 +46,14 @@ Page Custom ThirdParty
 !insertmacro MUI_LANGUAGE English
 
 # Installer attributes
-OutFile setup_simplebackup.exe
+OutFile setup_simplebackup.1.0.4.0.exe
 InstallDir $PROGRAMFILES64\SimpleBackup
 
 CRCCheck on
 XPStyle on
 ShowInstDetails show
-BrandingText "SimpleBackup © VPKSoft 2019"
-VIProductVersion 1.0.3.1
+BrandingText "SimpleBackup © VPKSoft 2020"
+VIProductVersion 1.0.4.0
 VIAddVersionKey ProductName SimpleBackup
 VIAddVersionKey ProductVersion "${VERSION}"
 VIAddVersionKey CompanyName "${COMPANY}"
@@ -69,42 +71,13 @@ Section -Main SEC0000
 	
 	nsExec::Exec 'taskkill /f /im "SimpleBackup.exe"'
     
-    !insertmacro CheckNetFramework 461	
+    !insertmacro CheckNetFramework 47	
 
     SetOutPath "$LOCALAPPDATA\SimpleBackup"
     File simplebackup_lang.sqlite
     
     SetOutPath $INSTDIR
-    File ..\SimpleBackup\bin\Release\DotNetZip.dll
-    File ..\SimpleBackup\bin\Release\NCrontab.dll
-    File ..\SimpleBackup\bin\Release\script.sql_script
-    File ..\SimpleBackup\bin\Release\SimpleBackup.exe
-    File ..\SimpleBackup\bin\Release\FolderSelect.dll
-    File ..\SimpleBackup\bin\Release\VPKSoft.LangLib.dll
-#    File ..\SimpleBackup\bin\x86\Release\SQLite.Interop.dll
-    File ..\SimpleBackup\bin\Release\System.Data.SQLite.dll
-#    File ..\SimpleBackup\VPKSoft.LangLib\x86\VPKSoft.LangLib.dll
-#    File ..\SimpleBackup\System.Data.SQLite\x86\SQLite.Interop.dll
-#    File ..\SimpleBackup\System.Data.SQLite\x86\System.Data.SQLite.dll
-    File ..\SimpleBackup\bin\Release\VPKSoft.About.dll				# 12.10.17
-    File ..\SimpleBackup\bin\Release\VPKSoft.VersionCheck.dll		# 12.10.17
-
-
-    SetOutPath $INSTDIR\x86
-	File ..\SimpleBackup\bin\Release\x86\SQLite.Interop.dll
-	
-    SetOutPath $INSTDIR\x64
-	File ..\SimpleBackup\bin\Release\x64\SQLite.Interop.dll
-	
-	${If} ${FileExists} $INSTDIR\SQLite.Interop.dll
-		Delete $INSTDIR\SQLite.Interop.dll
-	${EndIf}
-
-	${If} ${FileExists} $INSTDIR\Ionic.Zip.dll
-		Delete $INSTDIR\Ionic.Zip.dll
-	${EndIf}
-	
-	
+    File /r ..\SimpleBackup\bin\Release\*.*
 	
     SetOutPath $SMPROGRAMS\$StartMenuGroup
     CreateShortcut $SMPROGRAMS\$StartMenuGroup\SimpleBackup.lnk $INSTDIR\SimpleBackup.exe
@@ -144,31 +117,17 @@ done${UNSECTION_ID}:
     Pop $R0
 !macroend
 
+# a function to execute the installed software as non-administrator.. 
+Function RunAsCurrentUser	
+	ShellExecAsUser::ShellExecAsUser "" "$INSTDIR\SimpleBackup.exe"
+FunctionEnd
+
 # Uninstaller sections
 Section /o -un.Main UNSEC0000
     Delete /REBOOTOK $SMSTARTUP\SimpleBackup.lnk
     Delete /REBOOTOK $SMPROGRAMS\$StartMenuGroup\SimpleBackup.lnk
-    Delete /REBOOTOK $INSTDIR\System.Data.SQLite.dll
-    Delete /REBOOTOK $INSTDIR\SQLite.Interop.dll
-    Delete /REBOOTOK $INSTDIR\SQLite.Designer.dll
-    Delete /REBOOTOK $INSTDIR\SimpleBackup.exe
-    Delete /REBOOTOK $INSTDIR\script.sql_script
-    Delete /REBOOTOK $INSTDIR\NCrontab.dll
-
-	${If} ${FileExists} $INSTDIR\Ionic.Zip.dll
-		Delete /REBOOTOK $INSTDIR\Ionic.Zip.dll
-	${EndIf}	
-	
-    Delete /REBOOTOK $INSTDIR\VPKSoft.LangLib.dll
-    Delete /REBOOTOK $INSTDIR\FolderSelect.dll
-    Delete /REBOOTOK $INSTDIR\DotNetZip.dll
-	
-	Delete /REBOOTOK $INSTDIR\x86\SQLite.Interop.dll
-	Delete /REBOOTOK $INSTDIR\x64\SQLite.Interop.dll
-    Delete /REBOOTOK $INSTDIR\VPKSoft.About.dll				# 12.10.17
-    Delete /REBOOTOK $INSTDIR\VPKSoft.VersionCheck.dll		# 12.10.17
-	
-    
+	RMDir /r /REBOOTOK $INSTDIR	
+	    
     Delete /REBOOTOK $LOCALAPPDATA\SimpleBackup\simplebackup_lang.sqlite
     Delete /REBOOTOK $LOCALAPPDATA\SimpleBackup\simplebackup.sqlite
     
